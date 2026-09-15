@@ -1,6 +1,7 @@
 import '@vly-ai/integrations';
 import { Toaster } from "@/components/ui/sonner";
 import { RequireAuth } from "@/components/RequireAuth";
+import { RequireOrg } from "@/components/RequireOrg";
 import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexReactClient } from "convex/react";
@@ -15,7 +16,11 @@ const AuthPage = lazy(() => import("./pages/Auth.tsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
 const Opportunities = lazy(() => import("./pages/Opportunities.tsx"));
 const Profile = lazy(() => import("./pages/Profile.tsx"));
-const Manage = lazy(() => import("./pages/Manage.tsx"));
+const OrgDashboard = lazy(() => import("./pages/org/OrgDashboard.tsx"));
+const OrgOpportunities = lazy(() => import("./pages/org/OrgOpportunities.tsx"));
+const OrgPostOpportunity = lazy(() => import("./pages/org/OrgPostOpportunity.tsx"));
+const OrgAnalytics = lazy(() => import("./pages/org/OrgAnalytics.tsx"));
+const OrgProfile = lazy(() => import("./pages/org/OrgProfile.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 // Simple loading fallback for route transitions
@@ -152,10 +157,62 @@ createRoot(document.getElementById("root")!).render(
                 }
               />
               <Route
-                path="/manage"
+                path="/org"
                 element={
                   <RequireAuth>
-                    <Manage />
+                    <RequireOrg>
+                      <OrgDashboard />
+                    </RequireOrg>
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/org/opportunities"
+                element={
+                  <RequireAuth>
+                    <RequireOrg>
+                      <OrgOpportunities />
+                    </RequireOrg>
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/org/post"
+                element={
+                  <RequireAuth>
+                    <RequireOrg>
+                      <OrgPostOpportunity />
+                    </RequireOrg>
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/org/opportunities/:id/edit"
+                element={
+                  <RequireAuth>
+                    <RequireOrg>
+                      <OrgPostOpportunity />
+                    </RequireOrg>
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/org/analytics"
+                element={
+                  <RequireAuth>
+                    <RequireOrg>
+                      <OrgAnalytics />
+                    </RequireOrg>
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/org/profile"
+                element={
+                  <RequireAuth>
+                    <RequireOrg>
+                      <OrgProfile />
+                    </RequireOrg>
                   </RequireAuth>
                 }
               />

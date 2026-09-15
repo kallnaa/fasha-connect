@@ -18,14 +18,22 @@ export const upsertProfile = mutation({
     interests: v.optional(v.array(v.string())),
     skills: v.optional(v.array(v.string())),
     availability: v.optional(v.string()),
+    age: v.optional(v.number()),
+    education: v.optional(v.string()),
+    experience: v.optional(v.string()),
+    // org fields
+    orgLogo: v.optional(v.string()),
+    website: v.optional(v.string()),
+    socialTwitter: v.optional(v.string()),
+    socialLinkedin: v.optional(v.string()),
+    socialInstagram: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Not signed in");
 
     const patch: Record<string, unknown> = {};
-    if (args.accountType !== undefined)
-      patch.accountType = args.accountType;
+    if (args.accountType !== undefined) patch.accountType = args.accountType;
     if (args.name !== undefined) patch.name = args.name;
     if (args.orgName !== undefined) patch.orgName = args.orgName;
     if (args.bio !== undefined) patch.bio = args.bio;
@@ -34,6 +42,14 @@ export const upsertProfile = mutation({
     if (args.interests !== undefined) patch.interests = args.interests;
     if (args.skills !== undefined) patch.skills = args.skills;
     if (args.availability !== undefined) patch.availability = args.availability;
+    if (args.age !== undefined) patch.age = Math.max(0, Math.floor(args.age));
+    if (args.education !== undefined) patch.education = args.education;
+    if (args.experience !== undefined) patch.experience = args.experience;
+    if (args.orgLogo !== undefined) patch.orgLogo = args.orgLogo;
+    if (args.website !== undefined) patch.website = args.website;
+    if (args.socialTwitter !== undefined) patch.socialTwitter = args.socialTwitter;
+    if (args.socialLinkedin !== undefined) patch.socialLinkedin = args.socialLinkedin;
+    if (args.socialInstagram !== undefined) patch.socialInstagram = args.socialInstagram;
 
     await ctx.db.patch(user._id, patch);
     return user._id;
@@ -54,6 +70,9 @@ export async function publicProfileFor(ctx: QueryCtx, userId: Id<"users">) {
     interests: user.interests ?? [],
     skills: user.skills ?? [],
     availability: user.availability ?? null,
+    age: user.age ?? null,
+    education: user.education ?? null,
+    experience: user.experience ?? null,
     accountType: user.accountType ?? null,
   } as const;
 }
@@ -77,6 +96,8 @@ export const listOrganizations = query({
         orgName: u.orgName ?? u.name ?? "Organization",
         district: u.district ?? null,
         bio: u.bio ?? null,
+        logo: u.orgLogo ?? null,
+        verification: u.verification ?? "none",
       }));
   },
 });

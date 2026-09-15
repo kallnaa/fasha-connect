@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import {
   Building2,
   Check,
+  GraduationCap,
   HeartHandshake,
   MapPin,
   Save,
@@ -12,13 +13,19 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { api } from "@/convex/_generated/api";
-import { DISTRICTS, INTERESTS, SKILLS } from "@/lib/constants";
+import {
+  AVAILABILITY,
+  DISTRICTS,
+  EDUCATION_LEVELS,
+  EXPERIENCE_LEVELS,
+  INTERESTS,
+  SKILLS,
+} from "@/lib/constants";
 import { AppShell } from "@/components/AppShell";
 import { ClayButton, ClayCard, ClayChip } from "@/components/clay";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
-import { AVAILABILITY } from "@/lib/constants";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -31,6 +38,9 @@ export default function Profile() {
   const [district, setDistrict] = useState(user?.district ?? "");
   const [bio, setBio] = useState(user?.bio ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
+  const [age, setAge] = useState(user?.age?.toString() ?? "");
+  const [education, setEducation] = useState(user?.education ?? "Any");
+  const [experience, setExperience] = useState(user?.experience ?? "No experience");
   const [interests, setInterests] = useState<string[]>(user?.interests ?? []);
   const [skills, setSkills] = useState<string[]>(user?.skills ?? []);
   const [availability, setAvailability] = useState(user?.availability ?? "Flexible");
@@ -43,6 +53,9 @@ export default function Profile() {
       setDistrict(user.district ?? "");
       setBio(user.bio ?? "");
       setPhone(user.phone ?? "");
+      setAge(user.age?.toString() ?? "");
+      setEducation(user.education ?? "Any");
+      setExperience(user.experience ?? "No experience");
       setInterests(user.interests ?? []);
       setSkills(user.skills ?? []);
       setAvailability(user.availability ?? "Flexible");
@@ -62,6 +75,9 @@ export default function Profile() {
         bio: bio.trim() || undefined,
         district: district || undefined,
         phone: phone.trim() || undefined,
+        age: accountType === "volunteer" && age ? Number(age) : undefined,
+        education: accountType === "volunteer" ? education : undefined,
+        experience: accountType === "volunteer" ? experience : undefined,
         interests: accountType === "volunteer" ? interests : [],
         skills: accountType === "volunteer" ? skills : [],
         availability: accountType === "volunteer" ? availability : undefined,
@@ -74,11 +90,7 @@ export default function Profile() {
     }
   };
 
-  const toggle = (
-    list: string[],
-    setList: (v: string[]) => void,
-    item: string,
-  ) => {
+  const toggle = (list: string[], setList: (v: string[]) => void, item: string) => {
     setList(list.includes(item) ? list.filter((i) => i !== item) : [...list, item]);
   };
 
@@ -112,6 +124,12 @@ export default function Profile() {
             chipClass="bg-sky/70 text-[#1e3a52]"
           />
         </div>
+        {accountType === "organization" && (
+          <p className="mt-3 rounded-2xl bg-sky/30 px-4 py-2.5 text-xs font-semibold text-[#1e3a52]">
+            After saving, you'll get the Organization console at{" "}
+            <b>/org</b> — Dashboard, Opportunities, Post, Analytics and Profile.
+          </p>
+        )}
       </ClayCard>
 
       {/* Basics */}
@@ -168,6 +186,50 @@ export default function Profile() {
               className="clay-input mt-1.5 rounded-2xl border-0 px-4 shadow-none focus-visible:ring-0 dark:bg-transparent"
             />
           </div>
+
+          {accountType === "volunteer" && (
+            <>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Age
+                </label>
+                <Input
+                  type="number"
+                  min={10}
+                  max={100}
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  placeholder="22"
+                  className="clay-input mt-1.5 rounded-2xl border-0 px-4 shadow-none focus-visible:ring-0 dark:bg-transparent"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  <GraduationCap className="mr-1 inline size-3" /> Education
+                </label>
+                <select
+                  value={education}
+                  onChange={(e) => setEducation(e.target.value)}
+                  className="clay-input mt-1.5 h-9 w-full rounded-2xl px-3 text-sm font-semibold outline-none"
+                >
+                  {EDUCATION_LEVELS.map((l) => <option key={l}>{l}</option>)}
+                </select>
+              </div>
+              <div className="sm:col-span-2">
+                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Experience level
+                </label>
+                <select
+                  value={experience}
+                  onChange={(e) => setExperience(e.target.value)}
+                  className="clay-input mt-1.5 h-9 w-full rounded-2xl px-3 text-sm font-semibold outline-none"
+                >
+                  {EXPERIENCE_LEVELS.map((l) => <option key={l}>{l}</option>)}
+                </select>
+              </div>
+            </>
+          )}
+
           <div className="sm:col-span-2">
             <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
               {accountType === "volunteer" ? "About you" : "About the organization"}
@@ -281,9 +343,7 @@ function TypeCard({
     <button
       onClick={onClick}
       className={`clay-press rounded-[1.25rem] p-4 text-left transition-all ${
-        active
-          ? "clay-shadow-inset bg-secondary"
-          : "clay-shadow-sm bg-card"
+        active ? "clay-shadow-inset bg-secondary" : "clay-shadow-sm bg-card"
       }`}
     >
       <div className="flex items-center justify-between">
@@ -316,7 +376,7 @@ function PillToggle({
   return (
     <button
       onClick={onClick}
-      className={`clay-chip px-3.5 py-1.5 text-xs font-bold transition-all clay-press ${
+      className={`clay-chip clay-press px-3.5 py-1.5 text-xs font-bold transition-all ${
         active
           ? `${activeClass} clay-shadow-sm`
           : "bg-secondary/80 text-secondary-foreground hover:bg-secondary"

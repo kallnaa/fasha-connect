@@ -2,6 +2,8 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./users";
 import { publicProfileFor } from "./profiles";
+import { matchScore } from "../lib/matching";
+import { STAGES } from "../lib/constants";
 
 /** Volunteer applies to an opportunity. */
 export const apply = mutation({
@@ -16,6 +18,7 @@ export const apply = mutation({
     const opp = await ctx.db.get(opportunityId);
     if (!opp) throw new Error("Opportunity not found");
     if (opp.status !== "open") throw new Error("This opportunity is not open");
+    if (opp.isPaused) throw new Error("This opportunity is paused");
 
     // prevent duplicates
     const existing = await ctx.db
@@ -32,6 +35,8 @@ export const apply = mutation({
       orgId: opp.orgId,
       message: message?.trim() || undefined,
       status: "pending",
+      stage: "new",
+      stageUpdatedAt: Date.now(),
       createdAt: Date.now(),
     });
 
@@ -66,7 +71,10 @@ export const listMine = query({
         return {
           _id: app._id,
           status: app.status,
+          stage: app.stage ?? "new",
           createdAt: app.createdAt,
+          infoRequest: app.infoRequest ?? null,
+          infoResponse: app.infoResponse ?? null,
           opportunity: opp
             ? {
                 _id: opp._id,
@@ -83,10 +91,22 @@ export const listMine = query({
   },
 });
 
-/** Applications for one opportunity (org side). */
+/** Applications for one opportunity (org side), with volunteer profile + match score. */
 export const listForOpportunity = query({
-  args: { opportunityId: v.id("opportunities") },
-  handler: async (ctx, { opportunityId }) => {
+  args: {
+    opportunityId: v.id("opportunities"),
+    // optional client-side-style filters; filtering also happens in UI
+    stage: v.optional(
+      v.union(
+        v.literal("new"),
+        v.literal("reviewing"),
+        v.literal("shortlisted"),
+        v.literal("accepted"),
+        v.literal("rejected"),
+      ),
+    ),
+  },
+  handler: async (ctx, { opportunityId, stage }) => {
     const user = await getCurrentUser(ctx);
     if (!user) return [];
     const opp = await ctx.db.get(opportunityId);
@@ -107,83 +127,175 @@ export const listForOpportunity = query({
 
     return rowsWithVolunteer
       .filter((r): r is NonNullable<typeof r> => r !== null)
-      .map((row) => ({
-        _id: row.app._id,
-        status: row.app.status,
-        message: row.app.message ?? null,
-        createdAt: row.app.createdAt,
-        volunteer: {
-          _id: row.profile!._id,
-          name: row.profile!.name,
-          district: row.profile!.district,
-          skills: row.profile!.skills,
-          interests: row.profile!.interests,
-          availability: row.profile!.availability,
-          bio: row.profile!.bio,
-        },
-      }));
+      .filter((r) => !stage || (r.app.stage ?? "new") === stage)
+      .map((row) => {
+        const p = row.profile!;
+        const { score, met, missed } = matchScore(
+          {
+            age: p.age ?? null,
+            education: p.education ?? null,
+            experience: p.experience ?? null,
+            district: p.district ?? null,
+            skills: p.skills ?? [],
+          },
+          opp.eligibility,
+        );
+        return {
+          _id: row.app._id,
+          status: row.app.status,
+          stage: row.app.stage ?? "new",
+          message: row.app.message ?? null,
+          createdAt: row.app.createdAt,
+          infoRequest: row.app.infoRequest ?? null,
+          infoRequestedAt: row.app.infoRequestedAt ?? null,
+          infoResponse: row.app.infoResponse ?? null,
+          infoRespondedAt: row.app.infoRespondedAt ?? null,
+          matchScore: score,
+          criteriaMet: met,
+          criteriaMissed: missed,
+          volunteer: {
+            _id: p._id,
+            name: p.name,
+            district: p.district,
+            skills: p.skills,
+            interests: p.interests,
+            availability: p.availability,
+            bio: p.bio,
+            age: p.age ?? null,
+            education: p.education ?? null,
+            experience: p.experience ?? null,
+            image: p.image,
+          },
+        };
+      });
   },
 });
 
-/** Pending application count for one opportunity (org side, cheap badge). */
-export const countPendingForOpportunity = query({
-  args: { opportunityId: v.id("opportunities") },
-  handler: async (ctx, { opportunityId }) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) return 0;
-    const opp = await ctx.db.get(opportunityId);
-    if (!opp || opp.orgId !== user._id) return 0;
-    const rows = await ctx.db
-      .query("applications")
-      .withIndex("by_opportunity", (q) => q.eq("opportunityId", opportunityId))
-      .collect();
-    return rows.filter((r) => r.status === "pending").length;
-  },
-});
-
-/** Accept or decline an application (org only). */
-export const decide = mutation({
+/** Set pipeline stage for an application (org only). */
+export const setStage = mutation({
   args: {
     applicationId: v.id("applications"),
-    decision: v.union(v.literal("accepted"), v.literal("declined")),
+    stage: v.union(
+      v.literal("new"),
+      v.literal("reviewing"),
+      v.literal("shortlisted"),
+      v.literal("accepted"),
+      v.literal("rejected"),
+    ),
   },
-  handler: async (ctx, { applicationId, decision }) => {
+  handler: async (ctx, { applicationId, stage }) => {
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Not signed in");
     const app = await ctx.db.get(applicationId);
     if (!app) throw new Error("Application not found");
     if (app.orgId !== user._id) throw new Error("Not your application");
 
-    if (app.status !== "pending") throw new Error("Already decided");
-
+    const now = Date.now();
     await ctx.db.patch(applicationId, {
-      status: decision,
-      decidedAt: Date.now(),
+      stage,
+      stageUpdatedAt: now,
+      status:
+        stage === "accepted" ? "accepted" : stage === "rejected" ? "declined" : "pending",
+      decidedAt: stage === "accepted" || stage === "rejected" ? now : undefined,
     });
 
     const opp = await ctx.db.get(app.opportunityId);
 
-    if (decision === "accepted" && opp) {
+    if (stage === "accepted" && opp) {
       await ctx.db.patch(opp._id, {
         slotsFilled: Math.min(opp.slots, opp.slotsFilled + 1),
       });
-      // auto-close when full
       if (opp.slotsFilled + 1 >= opp.slots) {
         await ctx.db.patch(opp._id, { status: "filled" });
       }
     }
 
+    const stageLabels: Record<string, string> = {
+      reviewing: "moved to Reviewing",
+      shortlisted: "been Shortlisted 🌟",
+      accepted: "been Accepted 🎉",
+      rejected: "not been accepted this time",
+    };
+    if (stageLabels[stage]) {
+      await ctx.db.insert("notifications", {
+        userId: app.volunteerId,
+        title:
+          stage === "accepted"
+            ? "Application accepted 🎉"
+            : stage === "rejected"
+              ? "Application update"
+              : "Application progress",
+        body: opp
+          ? `Your application for "${opp.title}" with ${opp.orgName} has ${stageLabels[stage]}.`
+          : "Your application status changed.",
+        kind: "status",
+        read: false,
+        createdAt: now,
+      });
+    }
+  },
+});
+
+/** Org requests additional info/documents from a volunteer. */
+export const requestInfo = mutation({
+  args: {
+    applicationId: v.id("applications"),
+    request: v.string(),
+  },
+  handler: async (ctx, { applicationId, request }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not signed in");
+    const app = await ctx.db.get(applicationId);
+    if (!app) throw new Error("Application not found");
+    if (app.orgId !== user._id) throw new Error("Not your application");
+
+    const now = Date.now();
+    await ctx.db.patch(applicationId, {
+      infoRequest: request.trim(),
+      infoRequestedAt: now,
+    });
+
+    const opp = await ctx.db.get(app.opportunityId);
     await ctx.db.insert("notifications", {
       userId: app.volunteerId,
-      title: decision === "accepted" ? "Application accepted 🎉" : "Application update",
+      title: "Information requested",
       body: opp
-        ? decision === "accepted"
-          ? `You've been accepted for "${opp.title}" with ${opp.orgName}.`
-          : `Your application for "${opp.title}" was not accepted this time.`
-        : "Your application status changed.",
-      kind: "status",
+        ? `${opp.orgName} requested more info for "${opp.title}": ${request.trim().slice(0, 120)}`
+        : "An organization requested more information from you.",
+      kind: "info",
       read: false,
-      createdAt: Date.now(),
+      createdAt: now,
+    });
+  },
+});
+
+/** Volunteer responds to an info request. */
+export const respondInfo = mutation({
+  args: {
+    applicationId: v.id("applications"),
+    response: v.string(),
+  },
+  handler: async (ctx, { applicationId, response }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not signed in");
+    const app = await ctx.db.get(applicationId);
+    if (!app) throw new Error("Application not found");
+    if (app.volunteerId !== user._id) throw new Error("Not your application");
+
+    const now = Date.now();
+    await ctx.db.patch(applicationId, {
+      infoResponse: response.trim(),
+      infoRespondedAt: now,
+    });
+
+    const opp = await ctx.db.get(app.opportunityId);
+    await ctx.db.insert("notifications", {
+      userId: app.orgId,
+      title: "Info response received",
+      body: `${user.name ?? "A volunteer"} responded to your request on "${opp?.title ?? "your opportunity"}".`,
+      kind: "info",
+      read: false,
+      createdAt: now,
     });
   },
 });
@@ -197,7 +309,12 @@ export const withdraw = mutation({
     const app = await ctx.db.get(applicationId);
     if (!app) throw new Error("Application not found");
     if (app.volunteerId !== user._id) throw new Error("Not your application");
-    if (app.status !== "pending") throw new Error("Only pending applications can be withdrawn");
+    if (app.status !== "pending") {
+      throw new Error("Only in-progress applications can be withdrawn");
+    }
     await ctx.db.delete(applicationId);
   },
 });
+
+// keep STAGES referenced for potential future server-side use
+void STAGES;

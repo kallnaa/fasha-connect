@@ -7,47 +7,6 @@ import { DISTRICTS } from "../lib/constants";
 // re-export for any convex-side consumers
 export { DISTRICTS };
 
-// Volunteer interest areas (drive recommendations)
-export const INTERESTS = [
-  "Education",
-  "Health",
-  "Environment",
-  "Community Development",
-  "Agriculture",
-  "Technology",
-  "Youth Empowerment",
-  "Women Empowerment",
-  "Sports",
-  "Arts & Culture",
-];
-
-// Skills volunteers can offer
-export const SKILLS = [
-  "Teaching",
-  "First Aid",
-  "Public Speaking",
-  "Fundraising",
-  "Event Planning",
-  "Graphic Design",
-  "Web Development",
-  "Data Entry",
-  "Social Media",
-  "Translation",
-  "Photography",
-  "Carpentry",
-];
-
-export const CATEGORIES = [
-  "Education",
-  "Health",
-  "Environment",
-  "Community",
-  "Agriculture",
-  "Technology",
-];
-
-export const COMMITMENTS = ["One-time", "Weekly", "Monthly", "Ongoing"];
-
 /** One-time demo seed: creates org accounts + opportunities if none exist yet. */
 export const seedDemoData = mutation({
   args: {},
@@ -64,6 +23,7 @@ export const seedDemoData = mutation({
       email: string;
       district: string;
       bio: string;
+      website: string;
     };
     const orgs: OrgSpec[] = [
       {
@@ -71,32 +31,32 @@ export const seedDemoData = mutation({
         name: "Umurava Youth Network",
         email: "hello@umurava.rw",
         district: "Gasabo",
-        bio:
-          "We equip Rwandan youth with leadership, entrepreneurship and digital skills through community-led programs.",
+        bio: "We equip Rwandan youth with leadership, entrepreneurship and digital skills through community-led programs.",
+        website: "https://umurava.rw",
       },
       {
         orgName: "Twige Tomorrow Schools",
         name: "Twige Tomorrow Schools",
         email: "info@twige.org.rw",
         district: "Musanze",
-        bio:
-          "A network of community schools improving literacy and numeracy for children in rural Rwanda.",
+        bio: "A network of community schools improving literacy and numeracy for children in rural Rwanda.",
+        website: "https://twige.org.rw",
       },
       {
         orgName: "Ubuzima Health Initiative",
         name: "Ubuzima Health Initiative",
         email: "care@ubuzima.rw",
         district: "Huye",
-        bio:
-          "We run mobile clinics, hygiene campaigns and health education in partnership with local health centers.",
+        bio: "We run mobile clinics, hygiene campaigns and health education in partnership with local health centers.",
+        website: "https://ubuzima.rw",
       },
       {
         orgName: "Ireme Green Rwanda",
         name: "Ireme Green Rwanda",
         email: "team@ireme.rw",
         district: "Rubavu",
-        bio:
-          "Environmental conservation collective focused on tree planting, lake cleanups and climate education.",
+        bio: "Environmental conservation collective focused on tree planting, lake cleanups and climate education.",
+        website: "https://ireme.rw",
       },
     ];
 
@@ -108,7 +68,10 @@ export const seedDemoData = mutation({
         orgName: org.orgName,
         bio: org.bio,
         district: org.district,
+        website: org.website,
         accountType: "organization",
+        verification: "verified",
+        verifiedAt: Date.now(),
         isSeeded: true,
       });
       orgIds[org.orgName] = id;
@@ -124,6 +87,14 @@ export const seedDemoData = mutation({
       skills: string[];
       slots: number;
       featured?: boolean;
+      type: string;
+      targetAudience: string;
+      benefits: string;
+      requirements: string;
+      minAge?: number;
+      education?: string;
+      experience?: string;
+      districts?: string[];
     };
     const opps: OppSpec[] = [
       {
@@ -137,6 +108,11 @@ export const seedDemoData = mutation({
         skills: ["Teaching", "Public Speaking"],
         slots: 8,
         featured: true,
+        type: "Volunteer",
+        targetAudience: "Youth 18–30, students, anyone who loves reading",
+        benefits: "Training certificate, teaching materials provided, transport reimbursement",
+        requirements: "Patience, basic Kinyarwanda or English, commit 2 afternoons/week",
+        minAge: 18,
       },
       {
         org: "Ubuzima Health Initiative",
@@ -149,6 +125,12 @@ export const seedDemoData = mutation({
         skills: ["First Aid", "Translation"],
         slots: 12,
         featured: true,
+        type: "Volunteer",
+        targetAudience: "Nursing/public-health students and volunteers",
+        benefits: "First-aid certification, meals on clinic days, reference letter",
+        requirements: "First Aid basics preferred, comfortable walking hilly terrain",
+        minAge: 18,
+        education: "O-Level / A2",
       },
       {
         org: "Ireme Green Rwanda",
@@ -161,6 +143,10 @@ export const seedDemoData = mutation({
         skills: [],
         slots: 30,
         featured: true,
+        type: "Event Support",
+        targetAudience: "Everyone — families welcome",
+        benefits: "Snacks, gloves & bags provided, community certificate",
+        requirements: "None — just show up with energy",
       },
       {
         org: "Umurava Youth Network",
@@ -173,6 +159,12 @@ export const seedDemoData = mutation({
         skills: ["Web Development", "Teaching"],
         slots: 6,
         featured: true,
+        type: "Fellowship",
+        targetAudience: "Tech professionals, CS students, bootcamp grads",
+        benefits: "Mentor training, certificate, priority access to Umurava events",
+        requirements: "HTML/CSS basics, 1 afternoon per week for 6 weeks",
+        minAge: 20,
+        experience: "Some experience",
       },
       {
         org: "Umurava Youth Network",
@@ -184,6 +176,12 @@ export const seedDemoData = mutation({
         commitment: "One-time",
         skills: ["Public Speaking"],
         slots: 15,
+        type: "Volunteer",
+        targetAudience: "Working professionals of any field",
+        benefits: "Speaker feature on our socials, networking lunch",
+        requirements: "Willingness to share your story publicly",
+        minAge: 22,
+        experience: "Some experience",
       },
       {
         org: "Ubuzima Health Initiative",
@@ -195,6 +193,11 @@ export const seedDemoData = mutation({
         commitment: "One-time",
         skills: [],
         slots: 20,
+        type: "Event Support",
+        targetAudience: "Anyone 16+ who can walk 5km",
+        benefits: "Lunch, community service hours",
+        requirements: "Physical fitness for rural routes",
+        minAge: 16,
       },
       {
         org: "Ireme Green Rwanda",
@@ -206,6 +209,11 @@ export const seedDemoData = mutation({
         commitment: "Ongoing",
         skills: [],
         slots: 10,
+        type: "Internship",
+        targetAudience: "Agronomy & environmental students",
+        benefits: "Field experience, data-skills training, recommendation letter",
+        requirements: "Interest in agroforestry, 2 mornings/week",
+        education: "A-Level / A2 done",
       },
       {
         org: "Twige Tomorrow Schools",
@@ -217,6 +225,12 @@ export const seedDemoData = mutation({
         commitment: "Weekly",
         skills: ["Teaching", "Event Planning"],
         slots: 4,
+        type: "Volunteer",
+        targetAudience: "Women in STEM strongly encouraged",
+        benefits: "Facilitation training, kit budget, certificate",
+        requirements: "Basic science knowledge, Saturdays 9–12",
+        minAge: 19,
+        education: "A-Level / A2 done",
       },
       {
         org: "Umurava Youth Network",
@@ -228,6 +242,11 @@ export const seedDemoData = mutation({
         commitment: "Ongoing",
         skills: ["Social Media", "Photography", "Graphic Design"],
         slots: 3,
+        type: "Volunteer",
+        targetAudience: "Content creators, marketing students",
+        benefits: "Portfolio pieces, creator workshops, feature credits",
+        requirements: "Own smartphone, basic editing skills",
+        minAge: 18,
       },
     ];
 
@@ -246,6 +265,22 @@ export const seedDemoData = mutation({
         status: "open",
         featured: o.featured ?? false,
         createdAt: Date.now() - Math.floor(Math.random() * 30) * 86400000,
+
+        type: o.type,
+        targetAudience: o.targetAudience,
+        benefits: o.benefits,
+        requirements: o.requirements,
+        eligibility: {
+          minAge: o.minAge,
+          education: o.education,
+          experience: o.experience,
+          districts: o.districts,
+          skills: o.skills.length > 0 ? o.skills : undefined,
+        },
+
+        views: Math.floor(Math.random() * 120) + 20,
+        saves: Math.floor(Math.random() * 25),
+        linkClicks: Math.floor(Math.random() * 18),
       });
     }
   },

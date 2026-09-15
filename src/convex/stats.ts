@@ -1,7 +1,7 @@
 import { query } from "./_generated/server";
 import { getCurrentUser } from "./users";
 
-/** Lightweight dashboard stats for the signed-in user. */
+/** Lightweight dashboard stats for the signed-in user (volunteer or org). */
 export const myStats = query({
   args: {},
   handler: async (ctx) => {

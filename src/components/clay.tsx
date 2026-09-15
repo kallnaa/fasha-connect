@@ -109,3 +109,34 @@ export function StatusChip({ status }: { status: string }) {
     </ClayChip>
   );
 }
+
+/** Org applicant pipeline stage chip colors (New → Reviewing → Shortlisted → Accepted/Rejected). */
+export const STAGE_STYLES: Record<string, string> = {
+  new: "bg-butter/70 text-[#6b4e12]",
+  reviewing: "bg-sky/70 text-[#1e3a52]",
+  shortlisted: "bg-lilac/70 text-[#4a3660]",
+  accepted: "bg-mint/70 text-[#22503a]",
+  rejected: "bg-peach/70 text-[#7c2d12]",
+};
+
+export function StageChip({ stage }: { stage: string }) {
+  const labels: Record<string, string> = {
+    new: "New",
+    reviewing: "Reviewing",
+    shortlisted: "Shortlisted",
+    accepted: "Accepted",
+    rejected: "Rejected",
+  };
+  return (
+    <ClayChip className={STAGE_STYLES[stage] ?? "bg-secondary"}>
+      {labels[stage] ?? stage}
+    </ClayChip>
+  );
+}
+
+/** Color for a 0-100 match score. */
+export function matchScoreColor(score: number) {
+  if (score >= 75) return "bg-mint text-[#22503a]";
+  if (score >= 45) return "bg-butter text-[#6b4e12]";
+  return "bg-peach text-[#7c2d12]";
+}

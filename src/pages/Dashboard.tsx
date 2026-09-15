@@ -2,18 +2,18 @@ import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
-  CalendarClock,
   Clock3,
   HandHeart,
   Inbox,
   MapPin,
+  MessageCircleQuestion,
   Search,
   Sparkles,
   UserPlus,
   Users,
 } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, Navigate, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { api } from "@/convex/_generated/api";
@@ -23,7 +23,7 @@ import {
   ClayButton,
   ClayCard,
   ClayChip,
-  StatusChip,
+  StageChip,
 } from "@/components/clay";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -38,6 +38,8 @@ type Opp = {
   skills: string[];
   slots: number;
   slotsFilled: number;
+  type: string;
+  deadline: number | null;
   score: number;
   matchReasons: string[];
 };
@@ -45,7 +47,10 @@ type Opp = {
 type AppRow = {
   _id: string;
   status: string;
+  stage: string;
   createdAt: number;
+  infoRequest: string | null;
+  infoResponse: string | null;
   opportunity: {
     _id: string;
     title: string;
@@ -57,16 +62,21 @@ type AppRow = {
 };
 
 export default function Dashboard() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [withdrawing, setWithdrawing] = useState<string | null>(null);
 
+  // Organizations get their own console — keep the two experiences separate
+  const isOrg = user?.accountType === "organization";
+
+  // hooks must run unconditionally; orgs are redirected during render below
   const stats = useQuery(api.stats.myStats, {});
   const recommendations = (useQuery(api.recommendations.recommend, {}) as Opp[] | undefined) ?? [];
   const myApps = (useQuery(api.applications.listMine, {}) as AppRow[] | undefined) ?? [];
   const withdraw = useMutation(api.applications.withdraw);
-
-  const isOrg = user?.accountType === "organization";
+  const respondInfo = useMutation(api.applications.respondInfo);
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
 
   const handleWithdraw = async (id: string) => {
     setWithdrawing(id);
@@ -80,6 +90,21 @@ export default function Dashboard() {
     }
   };
 
+  const handleReply = async (id: string) => {
+    if (!replyText.trim()) return;
+    try {
+      await respondInfo({ applicationId: id as never, response: replyText });
+      toast.success("Response sent to the organization");
+      setReplyTo(null);
+      setReplyText("");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not send response");
+    }
+  };
+
+  // org accounts are redirected to the org console (hooks ran above)
+  if (isOrg) return <Navigate to="/org" replace />;
+
   return (
     <AppShell>
       {/* Greeting */}
@@ -90,7 +115,7 @@ export default function Dashboard() {
         className="flex flex-wrap items-center justify-between gap-4"
       >
         <div className="flex items-center gap-4">
-          <span className="flex size-14 items-center justify-center rounded-3xl bg-primary font-display text-xl font-extrabold text-primary-foreground clay-shadow-primary">
+          <span className="clay-shadow-primary flex size-14 items-center justify-center rounded-3xl bg-primary font-display text-xl font-extrabold text-primary-foreground">
             {initials(user?.name)}
           </span>
           <div>
@@ -102,18 +127,11 @@ export default function Dashboard() {
             </h1>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {isOrg && (
-            <ClayButton asChild variant="outline" size="sm">
-              <Link to="/manage">Org console</Link>
-            </ClayButton>
-          )}
-          <ClayButton asChild size="sm">
-            <Link to="/opportunities">
-              <Search /> Browse opportunities
-            </Link>
-          </ClayButton>
-        </div>
+        <ClayButton asChild size="sm">
+          <Link to="/opportunities">
+            <Search /> Browse opportunities
+          </Link>
+        </ClayButton>
       </motion.div>
 
       {/* Stats */}
@@ -126,7 +144,7 @@ export default function Dashboard() {
             color: "bg-peach/70",
           },
           {
-            label: "Pending",
+            label: "In progress",
             value: stats?.pending ?? 0,
             icon: Clock3,
             color: "bg-butter/70",
@@ -138,8 +156,8 @@ export default function Dashboard() {
             color: "bg-mint/70",
           },
           {
-            label: isOrg ? "My postings" : "This week",
-            value: isOrg ? (stats?.myOpportunities ?? 0) : recommendations.length,
+            label: "Matches",
+            value: recommendations.length,
             icon: Sparkles,
             color: "bg-sky/70",
           },
@@ -172,7 +190,8 @@ export default function Dashboard() {
               Programs matched to your profile
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Based on your interests, skills, district and availability.{" "}
+              Based on your interests, skills, district, availability and each
+              posting's eligibility.{" "}
               <Link to="/profile" className="font-bold text-primary hover:underline">
                 Tune your profile →
               </Link>
@@ -234,7 +253,7 @@ export default function Dashboard() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <StatusChip status={app.status} />
+                      <StageChip stage={app.stage} />
                       <span className="text-xs font-semibold text-muted-foreground">
                         applied {timeAgo(app.createdAt)}
                       </span>
@@ -248,7 +267,7 @@ export default function Dashboard() {
                       {app.opportunity?.commitment ? ` · ${app.opportunity.commitment}` : ""}
                     </p>
                   </div>
-                  {app.status === "pending" && app.opportunity && (
+                  {app.stage === "new" && app.opportunity && (
                     <ClayButton
                       variant="outline"
                       size="sm"
@@ -259,6 +278,52 @@ export default function Dashboard() {
                     </ClayButton>
                   )}
                 </div>
+
+                {/* Info request / response thread */}
+                {(app.infoRequest || replyTo === app._id) && (
+                  <div className="clay-shadow-inset mt-3 rounded-2xl bg-secondary/50 p-3">
+                    <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      <MessageCircleQuestion className="size-3.5" /> Organization asked for more info
+                    </p>
+                    {app.infoRequest && (
+                      <p className="mt-1.5 text-sm italic text-foreground/80">“{app.infoRequest}”</p>
+                    )}
+                    {app.infoResponse ? (
+                      <p className="mt-2 rounded-xl bg-card/80 px-3 py-2 text-sm">
+                        <b>You:</b> {app.infoResponse}
+                      </p>
+                    ) : replyTo === app._id ? (
+                      <div className="mt-2">
+                        <textarea
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder="Answer here, or paste a link to your document…"
+                          className="clay-input min-h-20 w-full rounded-2xl px-3 py-2 text-sm outline-none"
+                        />
+                        <div className="mt-2 flex gap-2">
+                          <ClayButton size="sm" onClick={() => handleReply(app._id)}>
+                            Send response
+                          </ClayButton>
+                          <ClayButton size="sm" variant="outline" onClick={() => setReplyTo(null)}>
+                            Cancel
+                          </ClayButton>
+                        </div>
+                      </div>
+                    ) : (
+                      <ClayButton
+                        size="sm"
+                        variant="outline"
+                        className="mt-2"
+                        onClick={() => {
+                          setReplyTo(app._id);
+                          setReplyText("");
+                        }}
+                      >
+                        Respond
+                      </ClayButton>
+                    )}
+                  </div>
+                )}
               </ClayCard>
             ))}
           </div>

@@ -28,6 +28,33 @@ export const accountTypeValidator = v.union(
 );
 export type AccountType = Infer<typeof accountTypeValidator>;
 
+// Verified Organization badge states
+export const verificationValidator = v.union(
+  v.literal("none"),
+  v.literal("pending"),
+  v.literal("verified"),
+);
+
+// Org-side applicant pipeline
+export const stageValidator = v.union(
+  v.literal("new"),
+  v.literal("reviewing"),
+  v.literal("shortlisted"),
+  v.literal("accepted"),
+  v.literal("rejected"),
+);
+export type Stage = Infer<typeof stageValidator>;
+
+// Structured eligibility criteria attached to an opportunity
+export const eligibilityValidator = v.object({
+  minAge: v.optional(v.number()),
+  maxAge: v.optional(v.number()),
+  education: v.optional(v.string()), // minimum education level
+  experience: v.optional(v.string()), // minimum experience level
+  districts: v.optional(v.array(v.string())),
+  skills: v.optional(v.array(v.string())),
+});
+
 const schema = defineSchema(
   {
     // default auth tables using convex auth.
@@ -43,15 +70,31 @@ const schema = defineSchema(
 
       role: v.optional(roleValidator), // role of the user. do not remove
 
-      // Fasha volunteer profile
+      // Fasha profile (shared)
       accountType: v.optional(accountTypeValidator),
-      orgName: v.optional(v.string()),
       bio: v.optional(v.string()),
       district: v.optional(v.string()),
       phone: v.optional(v.string()),
+
+      // Volunteer profile
+      orgName: v.optional(v.string()),
       interests: v.optional(v.array(v.string())),
       skills: v.optional(v.array(v.string())),
       availability: v.optional(v.string()),
+      age: v.optional(v.number()),
+      education: v.optional(v.string()),
+      experience: v.optional(v.string()),
+      savedOpportunities: v.optional(v.array(v.id("opportunities"))),
+
+      // Organization profile
+      orgLogo: v.optional(v.string()), // image URL
+      website: v.optional(v.string()),
+      socialTwitter: v.optional(v.string()),
+      socialLinkedin: v.optional(v.string()),
+      socialInstagram: v.optional(v.string()),
+      verification: v.optional(verificationValidator),
+      verifiedAt: v.optional(v.number()),
+
       isSeeded: v.optional(v.boolean()),
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
@@ -73,6 +116,21 @@ const schema = defineSchema(
       ),
       featured: v.boolean(),
       createdAt: v.number(),
+
+      // Rich posting details (org experience)
+      type: v.optional(v.string()), // Volunteer | Internship | Fellowship | Event Support
+      targetAudience: v.optional(v.string()),
+      deadline: v.optional(v.number()), // application deadline (ms)
+      benefits: v.optional(v.string()),
+      requirements: v.optional(v.string()),
+      applicationLink: v.optional(v.string()), // external apply URL
+      eligibility: v.optional(eligibilityValidator),
+
+      // Org-side lifecycle & analytics
+      isPaused: v.optional(v.boolean()),
+      views: v.optional(v.number()),
+      saves: v.optional(v.number()),
+      linkClicks: v.optional(v.number()),
     })
       .index("by_org", ["orgId"])
       .index("by_status", ["status"]),
@@ -89,6 +147,16 @@ const schema = defineSchema(
       ),
       createdAt: v.number(),
       decidedAt: v.optional(v.number()),
+
+      // Org pipeline (New → Reviewing → Shortlisted → Accepted/Rejected)
+      stage: v.optional(stageValidator),
+      stageUpdatedAt: v.optional(v.number()),
+
+      // Additional information / document requests
+      infoRequest: v.optional(v.string()),
+      infoRequestedAt: v.optional(v.number()),
+      infoResponse: v.optional(v.string()),
+      infoRespondedAt: v.optional(v.number()),
     })
       .index("by_opportunity", ["opportunityId"])
       .index("by_volunteer", ["volunteerId"])

@@ -56,6 +56,7 @@ export const SKILLS = [
 
 export const CATEGORIES = [
   "Education",
+  "Youth Empowerment",
   "Health",
   "Environment",
   "Community",
@@ -66,3 +67,47 @@ export const CATEGORIES = [
 export const COMMITMENTS = ["One-time", "Weekly", "Monthly", "Ongoing"];
 
 export const AVAILABILITY = ["Flexible", "One-time", "Weekly", "Monthly", "Ongoing"];
+
+// Opportunity types (org posting form)
+export const OPPORTUNITY_TYPES = [
+  "Volunteer",
+  "Internship",
+  "Fellowship",
+  "Event Support",
+];
+
+// Minimum education levels
+export const EDUCATION_LEVELS = [
+  "Any",
+  "O-Level / A2",
+  "A-Level / A2 done",
+  "Diploma",
+  "Bachelor's degree",
+  "Master's or higher",
+];
+
+// Minimum experience levels
+export const EXPERIENCE_LEVELS = [
+  "No experience",
+  "Some experience",
+  "1+ year",
+  "3+ years",
+  "5+ years",
+];
+
+// Org applicant pipeline stages (New → Reviewing → Shortlisted → Accepted/Rejected)
+export const STAGES = [
+  "new",
+  "reviewing",
+  "shortlisted",
+  "accepted",
+  "rejected",
+] as const;
+
+export const STAGE_LABELS: Record<string, string> = {
+  new: "New",
+  reviewing: "Reviewing",
+  shortlisted: "Shortlisted",
+  accepted: "Accepted",
+  rejected: "Rejected",
+};

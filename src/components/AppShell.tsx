@@ -4,21 +4,33 @@ import { cn } from "@/lib/utils";
 import { api } from "@/convex/_generated/api";
 import logo from "@/assets/logo.svg";
 import {
+  BadgeCheck,
   Bell,
+  BellOff,
+  Briefcase,
   CalendarDays,
+  ChartColumn,
   Compass,
+  LayoutDashboard,
   LogOut,
   UserRoundCog,
-  BellOff,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink as RouterNavLink, useNavigate } from "react-router";
 import { useMutation, useQuery } from "convex/react";
 
-const NAV = [
+const VOLUNTEER_NAV = [
   { to: "/dashboard", label: "Dashboard", icon: Compass },
   { to: "/opportunities", label: "Opportunities", icon: CalendarDays },
   { to: "/profile", label: "Profile", icon: UserRoundCog },
+];
+
+const ORG_NAV = [
+  { to: "/org", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/org/opportunities", label: "Opportunities", icon: Briefcase },
+  { to: "/org/post", label: "Post", icon: Compass },
+  { to: "/org/analytics", label: "Analytics", icon: ChartColumn },
+  { to: "/org/profile", label: "Profile", icon: UserRoundCog },
 ];
 
 type NotificationRow = {
@@ -43,6 +55,9 @@ export function AppShell({
   const [accountOpen, setAccountOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const accountRef = useRef<HTMLDivElement>(null);
+
+  const isOrg = user?.accountType === "organization";
+  const NAV = isOrg ? ORG_NAV : VOLUNTEER_NAV;
 
   const notifications =
     (useQuery(api.notifications.listMine) as NotificationRow[] | undefined) ?? [];
@@ -88,14 +103,19 @@ export function AppShell({
 
       <header className="sticky top-0 z-40 px-3 pt-3 sm:px-5 sm:pt-4">
         <div className="clay-surface mx-auto flex max-w-6xl items-center justify-between gap-3 rounded-[1.5rem] px-4 py-2.5 sm:px-6">
-          <Link to="/dashboard" className="flex items-center gap-2.5">
+          <Link to={isOrg ? "/org" : "/dashboard"} className="flex items-center gap-2.5">
             <img src={logo} alt="Fasha" className="size-9 rounded-xl shadow-sm" />
             <span className="font-display text-xl font-extrabold tracking-tight">
               Fasha
             </span>
+            {isOrg && (
+              <span className="ml-1 hidden rounded-full bg-sky/60 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[#1e3a52] sm:inline">
+                Org
+              </span>
+            )}
           </Link>
 
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="hidden items-center gap-1 lg:flex">
             {NAV.map((item) => (
               <ShellNavLink key={item.to} to={item.to} icon={item.icon} label={item.label} />
             ))}
@@ -177,19 +197,26 @@ export function AppShell({
                 onClick={() => setAccountOpen((v) => !v)}
               >
                 <span className="flex size-6 items-center justify-center rounded-full bg-primary/80 text-xs font-bold text-primary-foreground">
-                  {initials(user?.name)}
+                  {initials(isOrg ? (user?.orgName ?? user?.name) : user?.name)}
                 </span>
-                <span className="hidden max-w-24 truncate text-sm font-bold sm:inline">
-                  {user?.name ?? "Account"}
+                <span className="hidden max-w-28 truncate text-sm font-bold sm:inline">
+                  {(isOrg ? (user?.orgName ?? user?.name) : user?.name) ?? "Account"}
                 </span>
               </Button>
               {accountOpen && (
-                <div className="clay-pop absolute right-0 mt-2 w-56 p-2">
+                <div className="clay-pop absolute right-0 mt-2 w-60 p-2">
                   <div className="px-3 py-2">
-                    <p className="truncate text-sm font-bold">{user?.name ?? "Account"}</p>
+                    <p className="truncate text-sm font-bold">
+                      {isOrg ? (user?.orgName ?? "Organization") : (user?.name ?? "Volunteer")}
+                    </p>
                     <p className="truncate text-xs text-muted-foreground">
                       {user?.email ?? "Guest account"}
                     </p>
+                    {isOrg && user?.verification === "verified" && (
+                      <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-[#22503a]">
+                        <BadgeCheck className="size-3.5" /> Verified Organization
+                      </p>
+                    )}
                   </div>
                   <div className="my-1 h-px bg-border" />
                   {NAV.map((item) => (
@@ -213,7 +240,7 @@ export function AppShell({
         </div>
 
         {/* Mobile nav */}
-        <nav className="clay-surface mx-auto mt-2 flex max-w-6xl items-center justify-around rounded-[1.25rem] px-2 py-2 md:hidden">
+        <nav className="clay-surface mx-auto mt-2 flex max-w-6xl items-center justify-around gap-1 overflow-x-auto rounded-[1.25rem] px-2 py-2 lg:hidden">
           {NAV.map((item) => (
             <ShellNavLink key={item.to} to={item.to} icon={item.icon} label={item.label} />
           ))}
@@ -243,7 +270,7 @@ function ShellNavLink({
       to={to}
       className={({ isActive }) =>
         cn(
-          "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold transition-colors",
+          "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold transition-colors",
           stacked && "w-full px-3 py-2",
           isActive
             ? "bg-primary text-primary-foreground clay-chip"
