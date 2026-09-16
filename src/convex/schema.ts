@@ -166,10 +166,39 @@ const schema = defineSchema(
       userId: v.id("users"),
       title: v.string(),
       body: v.string(),
-      kind: v.string(), // "application" | "status" | "info"
+      kind: v.string(), // "application" | "status" | "info" | "message" | "announcement"
+      link: v.optional(v.string()), // in-app deep link (e.g. /messages?c=...)
       read: v.boolean(),
       createdAt: v.number(),
     }).index("by_user", ["userId"]),
+
+    // One conversation per volunteer + organization + opportunity (created on accept)
+    conversations: defineTable({
+      opportunityId: v.id("opportunities"),
+      volunteerId: v.id("users"),
+      orgId: v.id("users"),
+      locked: v.optional(v.boolean()), // read-only when application is no longer accepted
+      lockReason: v.optional(v.string()),
+      volunteerUnread: v.optional(v.number()),
+      orgUnread: v.optional(v.number()),
+      lastMessageAt: v.optional(v.number()),
+      lastMessagePreview: v.optional(v.string()),
+      createdAt: v.number(),
+    })
+      .index("by_volunteer", ["volunteerId"])
+      .index("by_org", ["orgId"])
+      .index("by_opportunity", ["opportunityId"])
+      .index("by_opportunity_volunteer", ["opportunityId", "volunteerId"]),
+
+    messages: defineTable({
+      conversationId: v.id("conversations"),
+      senderId: v.id("users"),
+      senderName: v.optional(v.string()),
+      senderRole: v.union(v.literal("volunteer"), v.literal("organization")),
+      body: v.string(),
+      kind: v.union(v.literal("direct"), v.literal("announcement")),
+      createdAt: v.number(),
+    }).index("by_conversation", ["conversationId"]),
   },
   {
     schemaValidation: false,

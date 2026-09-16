@@ -16,6 +16,8 @@ const AuthPage = lazy(() => import("./pages/Auth.tsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
 const Opportunities = lazy(() => import("./pages/Opportunities.tsx"));
 const Profile = lazy(() => import("./pages/Profile.tsx"));
+const Messages = lazy(() => import("./pages/Messages.tsx"));
+const OrgMessages = lazy(() => import("./pages/org/OrgMessages.tsx"));
 const OrgDashboard = lazy(() => import("./pages/org/OrgDashboard.tsx"));
 const OrgOpportunities = lazy(() => import("./pages/org/OrgOpportunities.tsx"));
 const OrgPostOpportunity = lazy(() => import("./pages/org/OrgPostOpportunity.tsx"));
@@ -157,11 +159,29 @@ createRoot(document.getElementById("root")!).render(
                 }
               />
               <Route
+                path="/messages"
+                element={
+                  <RequireAuth>
+                    <Messages />
+                  </RequireAuth>
+                }
+              />
+              <Route
                 path="/org"
                 element={
                   <RequireAuth>
                     <RequireOrg>
                       <OrgDashboard />
+                    </RequireOrg>
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/org/messages"
+                element={
+                  <RequireAuth>
+                    <RequireOrg>
+                      <OrgMessages />
                     </RequireOrg>
                   </RequireAuth>
                 }

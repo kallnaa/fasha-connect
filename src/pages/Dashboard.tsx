@@ -7,6 +7,7 @@ import {
   Inbox,
   MapPin,
   MessageCircleQuestion,
+  MessagesSquare,
   Search,
   Sparkles,
   UserPlus,
@@ -51,6 +52,7 @@ type AppRow = {
   createdAt: number;
   infoRequest: string | null;
   infoResponse: string | null;
+  conversationId?: string | null;
   opportunity: {
     _id: string;
     title: string;
@@ -266,17 +268,27 @@ export default function Dashboard() {
                       {app.opportunity?.district ? ` · ${app.opportunity.district}` : ""}
                       {app.opportunity?.commitment ? ` · ${app.opportunity.commitment}` : ""}
                     </p>
+                  </div>                  <div className="flex flex-wrap justify-end gap-2">
+                    {app.stage === "new" && app.opportunity && (
+                      <ClayButton
+                        variant="outline"
+                        size="sm"
+                        disabled={withdrawing === app._id}
+                        onClick={() => handleWithdraw(app._id)}
+                      >
+                        Withdraw
+                      </ClayButton>
+                    )}
+                    {app.status === "accepted" && app.opportunity && (
+                      <ClayButton
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(`/messages?c=${app.conversationId}`)}
+                      >
+                        <MessagesSquare className="size-4" /> Message
+                      </ClayButton>
+                    )}
                   </div>
-                  {app.stage === "new" && app.opportunity && (
-                    <ClayButton
-                      variant="outline"
-                      size="sm"
-                      disabled={withdrawing === app._id}
-                      onClick={() => handleWithdraw(app._id)}
-                    >
-                      Withdraw
-                    </ClayButton>
-                  )}
                 </div>
 
                 {/* Info request / response thread */}

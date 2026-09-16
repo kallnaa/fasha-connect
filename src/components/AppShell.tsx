@@ -13,6 +13,7 @@ import {
   Compass,
   LayoutDashboard,
   LogOut,
+  MessagesSquare,
   UserRoundCog,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -22,22 +23,25 @@ import { useMutation, useQuery } from "convex/react";
 const VOLUNTEER_NAV = [
   { to: "/dashboard", label: "Dashboard", icon: Compass },
   { to: "/opportunities", label: "Opportunities", icon: CalendarDays },
+  { to: "/messages", label: "Messages", icon: MessagesSquare },
   { to: "/profile", label: "Profile", icon: UserRoundCog },
 ];
 
 const ORG_NAV = [
   { to: "/org", label: "Dashboard", icon: LayoutDashboard },
   { to: "/org/opportunities", label: "Opportunities", icon: Briefcase },
+  { to: "/org/messages", label: "Messages", icon: MessagesSquare },
   { to: "/org/post", label: "Post", icon: Compass },
   { to: "/org/analytics", label: "Analytics", icon: ChartColumn },
   { to: "/org/profile", label: "Profile", icon: UserRoundCog },
 ];
 
 type NotificationRow = {
-  _id: string;
+  _id: string; // eslint-disable-line @typescript-eslint/no-unused-vars
   title: string;
   body: string;
   kind: string;
+  link?: string | null;
   read: boolean;
   createdAt: number;
 };
@@ -64,6 +68,15 @@ export function AppShell({
   const unread = notifications.filter((n) => !n.read).length;
   const markRead = useMutation(api.notifications.markRead);
   const markAllRead = useMutation(api.notifications.markAllRead);
+
+  // total unread chat messages for the messages badge
+  const msgUnread = useQuery(api.messages.unreadCount, {}) ?? 0;
+
+  const openNotification = (n: NotificationRow) => {
+    if (!n.read) markRead({ id: n._id as never });
+    setNotifOpen(false);
+    if (n.link) navigate(n.link);
+  };
 
   // one-time demo seed so new accounts land on a lively app
   const featured = useQuery(api.opportunities.listFeatured, { limit: 1 });
@@ -122,6 +135,23 @@ export function AppShell({
           </nav>
 
           <div className="flex items-center gap-2">
+            {/* Messages */}
+            <Link
+              to={isOrg ? "/org/messages" : "/messages"}
+              aria-label={`Messages${msgUnread ? ` (${msgUnread} unread)` : ""}`}
+              className={cn(
+                "relative flex size-9 items-center justify-center rounded-full bg-secondary/70 transition-colors hover:bg-secondary",
+                msgUnread > 0 && "bg-mint/70",
+              )}
+            >
+              <MessagesSquare className="size-4" />
+              {msgUnread > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
+                  {msgUnread > 9 ? "9+" : msgUnread}
+                </span>
+              )}
+            </Link>
+
             {/* Notifications */}
             <div className="relative" ref={notifRef}>
               <Button
@@ -166,9 +196,7 @@ export function AppShell({
                       notifications.map((n) => (
                         <button
                           key={n._id}
-                          onClick={() => {
-                            if (!n.read) markRead({ id: n._id as never });
-                          }}
+                          onClick={() => openNotification(n)}
                           className={cn(
                             "w-full rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-secondary/60",
                             !n.read && "bg-butter/40",
@@ -178,8 +206,9 @@ export function AppShell({
                           <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
                             {n.body}
                           </p>
-                          <p className="mt-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">
-                            {timeAgo(n.createdAt)}
+                          <p className="mt-1 flex items-center justify-between text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">
+                            <span>{timeAgo(n.createdAt)}</span>
+                            {n.link && <span className="font-bold text-primary normal-case">Open →</span>}
                           </p>
                         </button>
                       ))

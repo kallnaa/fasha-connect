@@ -3,7 +3,7 @@ import { mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./users";
 import { publicProfileFor } from "./profiles";
 import { matchScore } from "../lib/matching";
-import { STAGES } from "../lib/constants";
+import { ensureConversation, syncConversationLock } from "./messages";
 
 /** Volunteer applies to an opportunity. */
 export const apply = mutation({
@@ -68,6 +68,12 @@ export const listMine = query({
     return Promise.all(
       mine.map(async (app) => {
         const opp = await ctx.db.get(app.opportunityId);
+        const conv = await ctx.db
+          .query("conversations")
+          .withIndex("by_opportunity_volunteer", (q) =>
+            q.eq("opportunityId", app.opportunityId).eq("volunteerId", user._id),
+          )
+          .first();
         return {
           _id: app._id,
           status: app.status,
@@ -75,6 +81,7 @@ export const listMine = query({
           createdAt: app.createdAt,
           infoRequest: app.infoRequest ?? null,
           infoResponse: app.infoResponse ?? null,
+          conversationId: conv?._id ?? null,
           opportunity: opp
             ? {
                 _id: opp._id,
@@ -121,7 +128,15 @@ export const listForOpportunity = query({
     const rowsWithVolunteer = await Promise.all(
       rows.map(async (app) => {
         const vol = await ctx.db.get(app.volunteerId);
-        return vol ? { app, profile: await publicProfileFor(ctx, vol._id) } : null;
+        const conv = await ctx.db
+          .query("conversations")
+          .withIndex("by_opportunity_volunteer", (q) =>
+            q.eq("opportunityId", app.opportunityId).eq("volunteerId", app.volunteerId),
+          )
+          .first();
+        return vol
+          ? { app, profile: await publicProfileFor(ctx, vol._id), conversationId: conv?._id ?? null }
+          : null;
       }),
     );
 
@@ -146,6 +161,7 @@ export const listForOpportunity = query({
           stage: row.app.stage ?? "new",
           message: row.app.message ?? null,
           createdAt: row.app.createdAt,
+          conversationId: row.conversationId ?? null,
           infoRequest: row.app.infoRequest ?? null,
           infoRequestedAt: row.app.infoRequestedAt ?? null,
           infoResponse: row.app.infoResponse ?? null,
@@ -229,10 +245,24 @@ export const setStage = mutation({
           ? `Your application for "${opp.title}" with ${opp.orgName} has ${stageLabels[stage]}.`
           : "Your application status changed.",
         kind: "status",
+        link: stage === "accepted" ? "/messages" : undefined,
         read: false,
         createdAt: now,
       });
     }
+
+    // Messaging lifecycle: one conversation per volunteer + org + opportunity.
+    // Created automatically when accepted; becomes read-only otherwise.
+    if (stage === "accepted" && opp) {
+      await ensureConversation(ctx, {
+        opportunityId: app.opportunityId,
+        volunteerId: app.volunteerId,
+        orgId: app.orgId,
+      });
+    }
+    const newStatus =
+      stage === "accepted" ? "accepted" : stage === "rejected" ? "declined" : "pending";
+    await syncConversationLock(ctx, { ...app, status: newStatus });
   },
 });
 
@@ -300,7 +330,8 @@ export const respondInfo = mutation({
   },
 });
 
-/** Volunteer withdraws their application. */
+/** Volunteer withdraws their application. Pending apps are deleted; accepted
+ *  engagements are "left": marked declined so the conversation becomes read-only. */
 export const withdraw = mutation({
   args: { applicationId: v.id("applications") },
   handler: async (ctx, { applicationId }) => {
@@ -309,6 +340,36 @@ export const withdraw = mutation({
     const app = await ctx.db.get(applicationId);
     if (!app) throw new Error("Application not found");
     if (app.volunteerId !== user._id) throw new Error("Not your application");
+
+    if (app.status === "accepted") {
+      // Leaving an accepted engagement: keep history, lock the conversation.
+      const now = Date.now();
+      await ctx.db.patch(applicationId, {
+        status: "declined",
+        stage: "rejected",
+        stageUpdatedAt: now,
+        decidedAt: now,
+      });
+      const opp = await ctx.db.get(app.opportunityId);
+      if (opp) {
+        await ctx.db.patch(opp._id, {
+          slotsFilled: Math.max(0, opp.slotsFilled - 1),
+          status: opp.status === "filled" ? "open" : opp.status,
+        });
+        await ctx.db.insert("notifications", {
+          userId: app.orgId,
+          title: "Volunteer left",
+          body: `${user.name ?? "A volunteer"} stepped back from "${opp.title}". The conversation is now read-only.`,
+          kind: "status",
+          link: `/org/messages`,
+          read: false,
+          createdAt: now,
+        });
+      }
+      await syncConversationLock(ctx, { ...app, status: "declined" });
+      return;
+    }
+
     if (app.status !== "pending") {
       throw new Error("Only in-progress applications can be withdrawn");
     }
@@ -316,5 +377,22 @@ export const withdraw = mutation({
   },
 });
 
+/** Accepted application's conversation id (participants only) — for chat CTAs. */
+export const conversationFor = query({
+  args: { applicationId: v.id("applications") },
+  handler: async (ctx, { applicationId }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return null;
+    const app = await ctx.db.get(applicationId);
+    if (!app) return null;
+    if (app.volunteerId !== user._id && app.orgId !== user._id) return null;
+    const conv = await ctx.db
+      .query("conversations")
+      .withIndex("by_opportunity_volunteer", (q) =>
+        q.eq("opportunityId", app.opportunityId).eq("volunteerId", app.volunteerId),
+      )
+      .first();
+    return conv ? { _id: conv._id, locked: conv.locked ?? false } : null;
+  },
+});
 // keep STAGES referenced for potential future server-side use
-void STAGES;

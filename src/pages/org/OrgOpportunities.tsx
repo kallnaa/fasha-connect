@@ -4,6 +4,7 @@ import {
   ChevronDown,
   Eye,
   MessageCircleQuestion,
+  MessagesSquare,
   Pencil,
   Pause,
   Play,
@@ -16,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { api } from "@/convex/_generated/api";
@@ -69,6 +70,7 @@ type Applicant = {
   criteriaMissed: string[];
   infoRequest: string | null;
   infoResponse: string | null;
+  conversationId?: string | null;
   volunteer: {
     _id: string;
     name: string | null;
@@ -298,6 +300,7 @@ function ApplicantsList({ opportunityId }: { opportunityId: string }) {
 }
 
 function ApplicantCard({ applicant: a }: { applicant: Applicant }) {
+  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [showRequest, setShowRequest] = useState(false);
   const [requestText, setRequestText] = useState("");
@@ -439,6 +442,15 @@ function ApplicantCard({ applicant: a }: { applicant: Applicant }) {
             <MessageCircleQuestion className="size-4" />
             {a.infoRequest && !a.infoResponse ? "Re-request info" : "Request info"}
           </ClayButton>
+          {a.stage === "accepted" && a.conversationId && (
+            <ClayButton
+              size="sm"
+              variant="outline"
+              onClick={() => navigate(`/org/messages?c=${a.conversationId}`)}
+            >
+              <MessagesSquare className="size-4" /> Message
+            </ClayButton>
+          )}
         </div>
       </div>
 
