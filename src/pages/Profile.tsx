@@ -57,6 +57,8 @@ export default function Profile() {
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [age, setAge] = useState(user?.age?.toString() ?? "");
   const [education, setEducation] = useState(user?.education ?? "Any");
+  const [school, setSchool] = useState(user?.school ?? "");
+  const [track, setTrack] = useState(user?.track ?? "");
   const [experience, setExperience] = useState(user?.experience ?? "No experience");
   const [interests, setInterests] = useState<string[]>(user?.interests ?? []);
   const [skills, setSkills] = useState<string[]>(user?.skills ?? []);
@@ -72,6 +74,8 @@ export default function Profile() {
       setPhone(user.phone ?? "");
       setAge(user.age?.toString() ?? "");
       setEducation(user.education ?? "Any");
+      setSchool(user.school ?? "");
+      setTrack(user.track ?? "");
       setExperience(user.experience ?? "No experience");
       setInterests(user.interests ?? []);
       setSkills(user.skills ?? []);
@@ -94,6 +98,8 @@ export default function Profile() {
         phone: phone.trim() || undefined,
         age: accountType === "volunteer" && age ? Number(age) : undefined,
         education: accountType === "volunteer" ? education : undefined,
+        school: accountType === "volunteer" ? school.trim() || undefined : undefined,
+        track: accountType === "volunteer" ? track.trim() || undefined : undefined,
         experience: accountType === "volunteer" ? experience : undefined,
         interests: accountType === "volunteer" ? interests : [],
         skills: accountType === "volunteer" ? skills : [],
@@ -231,6 +237,28 @@ export default function Profile() {
                 >
                   {EDUCATION_LEVELS.map((l) => <option key={l}>{l}</option>)}
                 </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  High school / Institution
+                </label>
+                <Input
+                  value={school}
+                  onChange={(e) => setSchool(e.target.value)}
+                  placeholder="e.g. GS APACE Musanze"
+                  className="clay-input mt-1.5 rounded-2xl border-0 px-4 shadow-none focus-visible:ring-0 dark:bg-transparent"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Track / Combination
+                </label>
+                <Input
+                  value={track}
+                  onChange={(e) => setTrack(e.target.value)}
+                  placeholder="e.g. MPC, PCB, HEG"
+                  className="clay-input mt-1.5 rounded-2xl border-0 px-4 shadow-none focus-visible:ring-0 dark:bg-transparent"
+                />
               </div>
               <div className="sm:col-span-2">
                 <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
@@ -421,6 +449,8 @@ type CertRow = {
   fileUrl?: string;
   fileName?: string;
   verified?: boolean;
+  hours?: number;
+  sector?: string;
 };
 
 function CertificatesSection({ certificates }: { certificates: CertRow[] | undefined }) {
@@ -488,15 +518,19 @@ function CertificatesSection({ certificates }: { certificates: CertRow[] | undef
     }
   };
 
+  const verified = (certificates ?? []).filter((c) => c.verified);
+  const totalHours = verified.reduce((sum, c) => sum + (c.hours ?? 0), 0);
+  const completedPrograms = verified.filter((c) => c.hours !== undefined).length;
+
   return (
     <ClayCard className="mt-5 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2 font-display text-lg font-bold">
-            <Award className="size-5 text-primary" /> Certificates &amp; Verified Achievements
+            <Award className="size-5 text-primary" /> Verified Certificates &amp; Impact Log
           </h2>
           <p className="text-sm text-muted-foreground">
-            Upload digital certificates from completed programs — they showcase your experience to organizations.
+            Organization-verified completions and your own uploaded certificates.
           </p>
         </div>
         {!showForm && (
@@ -505,6 +539,22 @@ function CertificatesSection({ certificates }: { certificates: CertRow[] | undef
           </ClayButton>
         )}
       </div>
+
+      {/* Impact summary */}
+      {certificates !== undefined && (
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          {[
+            { label: "Verified hours", value: totalHours, accent: "text-primary" },
+            { label: "Programs completed", value: completedPrograms, accent: "text-rose-600" },
+            { label: "Certificates", value: verified.length, accent: "text-sky-700" },
+          ].map((s) => (
+            <div key={s.label} className="clay-shadow-inset rounded-2xl bg-secondary/50 px-3 py-3.5 text-center">
+              <p className={`font-display text-2xl font-extrabold ${s.accent}`}>{s.value}</p>
+              <p className="mt-0.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Add form */}
       {showForm && (
@@ -577,61 +627,86 @@ function CertificatesSection({ certificates }: { certificates: CertRow[] | undef
       ) : certificates.length === 0 ? (
         !showForm && (
           <p className="mt-4 rounded-2xl bg-secondary/50 px-4 py-6 text-center text-sm text-muted-foreground">
-            No certificates yet. Complete a volunteer program, then add it here —
-            organizations love seeing verified experience.
+            No certificates yet. When an organization marks your work as
+            completed, it appears here automatically — or upload your own.
           </p>
         )
       ) : (
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {certificates.map((cert) => (
-            <div
-              key={cert._id}
-              className="clay-press flex items-start gap-3 rounded-3xl border border-border bg-card p-4"
-            >
-              {cert.fileUrl && cert.fileUrl.startsWith("data:image") ? (
-                <img
-                  src={cert.fileUrl}
-                  alt={cert.title}
-                  className="size-14 shrink-0 rounded-2xl object-cover"
-                />
-              ) : (
-                <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-mint">
-                  <Award className="size-6 text-teal-800" />
-                </span>
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1.5 truncate font-display text-sm font-bold">
-                  {cert.title}
-                  {cert.verified && (
-                    <BadgeCheck className="size-4 shrink-0 text-teal-700" aria-label="Verified" />
+          {certificates.map((cert) => {
+            const orgVerified = cert.verified && cert.hours !== undefined;
+            return (
+              <div
+                key={cert._id}
+                className={`clay-press flex items-start gap-3 rounded-3xl border p-4 ${
+                  orgVerified ? "border-mint bg-mint/30" : "border-border bg-card"
+                }`}
+              >
+                {cert.fileUrl && cert.fileUrl.startsWith("data:image") ? (
+                  <img
+                    src={cert.fileUrl}
+                    alt={cert.title}
+                    className="size-14 shrink-0 rounded-2xl object-cover"
+                  />
+                ) : (
+                  <span className={`flex size-14 shrink-0 items-center justify-center rounded-2xl ${orgVerified ? "bg-mint" : "bg-butter"}`}>
+                    {orgVerified ? (
+                      <BadgeCheck className="size-7 text-teal-700" />
+                    ) : (
+                      <Award className="size-6 text-yellow-800" />
+                    )}
+                  </span>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-1.5 truncate font-display text-sm font-bold">
+                    {cert.title}
+                    {cert.verified && (
+                      <BadgeCheck className="size-4 shrink-0 text-teal-700" aria-label="Verified" />
+                    )}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {cert.issuer ?? "Issuer not set"}
+                    {cert.issuedAt ? ` · ${new Date(cert.issuedAt).toLocaleDateString()}` : ""}
+                  </p>
+                  {orgVerified && (
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      <span className="clay-chip bg-mint px-2 py-0.5 text-[10px] font-extrabold text-teal-800">
+                        {cert.hours} verified hours
+                      </span>
+                      <span className="clay-chip bg-sky px-2 py-0.5 text-[10px] font-extrabold text-sky-900">
+                        {cert.sector ?? "Community"}
+                      </span>
+                      <span className="clay-chip bg-card px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                        ✓ Org verified
+                      </span>
+                    </div>
                   )}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {cert.issuer ?? "Issuer not set"}
-                  {cert.issuedAt ? ` · ${new Date(cert.issuedAt).toLocaleDateString()}` : ""}
-                </p>
-                <div className="mt-1.5 flex items-center gap-3">
-                  {cert.fileUrl && (
-                    <a
-                      href={cert.fileUrl}
-                      download={cert.fileName ?? cert.title}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
-                    >
-                      <ExternalLink className="size-3" /> View file
-                    </a>
-                  )}
-                  <button
-                    className="flex items-center gap-1 text-xs font-bold text-destructive hover:underline"
-                    onClick={() => handleRemove(cert._id)}
-                  >
-                    <Trash2 className="size-3" /> Remove
-                  </button>
+                  <div className="mt-1.5 flex items-center gap-3">
+                    {cert.fileUrl && (
+                      <a
+                        href={cert.fileUrl}
+                        download={cert.fileName ?? cert.title}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+                      >
+                        <ExternalLink className="size-3" /> View file
+                      </a>
+                    )}
+                    {/* Org-verified impact records are permanent (authenticated) */}
+                    {!orgVerified && (
+                      <button
+                        className="flex items-center gap-1 text-xs font-bold text-destructive hover:underline"
+                        onClick={() => handleRemove(cert._id)}
+                      >
+                        <Trash2 className="size-3" /> Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </ClayCard>

@@ -162,6 +162,7 @@ export const listForOpportunity = query({
           message: row.app.message ?? null,
           createdAt: row.app.createdAt,
           conversationId: row.conversationId ?? null,
+          sector: opp.category,
           infoRequest: row.app.infoRequest ?? null,
           infoRequestedAt: row.app.infoRequestedAt ?? null,
           infoResponse: row.app.infoResponse ?? null,

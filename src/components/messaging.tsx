@@ -114,6 +114,39 @@ export function MessagesLayout({ basePath, isOrg }: { basePath: string; isOrg: b
   );
 }
 
+/**
+ * Renders message text with URLs (WhatsApp group invites, website links,
+ * tel: numbers) as clickable, safe links — orgs commonly share these
+ * after connecting with a volunteer.
+ */
+function MessageBody({ text, mine }: { text: string; mine: boolean }) {
+  const parts = text.split(/(https?:\/\/[^\s)]+|www\.[^\s)]+|wa\.me\/[^\s)]+|t\.me\/[^\s)]+)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (!part) return null;
+        const isLink = /^(https?:\/\/|www\.|wa\.me\/|t\.me\/)/.test(part);
+        if (!isLink) return <span key={i}>{part}</span>;
+        const href = part.startsWith("http") ? part : `https://${part}`;
+        return (
+          <a
+            key={i}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              "font-bold underline underline-offset-2",
+              mine ? "text-white" : "text-primary",
+            )}
+          >
+            {part}
+          </a>
+        );
+      })}
+    </>
+  );
+}
+
 /* ---------------------- Volunteer application updates ---------------------- */
 
 const STAGE_DOT: Record<string, string> = {
@@ -480,7 +513,7 @@ function ThreadPanel({
                       : "clay-shadow-inset bg-secondary/70 text-foreground",
                   )}
                 >
-                  {m.body}
+                  <MessageBody text={m.body} mine={m.mine} />
                 </div>
                 <p className="mt-1 px-1 text-[10px] font-medium text-muted-foreground/70">
                   {timeAgo(m.createdAt)}

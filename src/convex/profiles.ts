@@ -71,6 +71,8 @@ export const upsertProfile = mutation({
     availability: v.optional(v.string()),
     age: v.optional(v.number()),
     education: v.optional(v.string()),
+    school: v.optional(v.string()),
+    track: v.optional(v.string()),
     experience: v.optional(v.string()),
     // org fields
     orgLogo: v.optional(v.string()),
@@ -95,6 +97,8 @@ export const upsertProfile = mutation({
     if (args.availability !== undefined) patch.availability = args.availability;
     if (args.age !== undefined) patch.age = Math.max(0, Math.floor(args.age));
     if (args.education !== undefined) patch.education = args.education;
+    if (args.school !== undefined) patch.school = args.school.trim() || undefined;
+    if (args.track !== undefined) patch.track = args.track.trim() || undefined;
     if (args.experience !== undefined) patch.experience = args.experience;
     if (args.orgLogo !== undefined) patch.orgLogo = args.orgLogo;
     if (args.website !== undefined) patch.website = args.website;
@@ -123,6 +127,8 @@ export async function publicProfileFor(ctx: QueryCtx, userId: Id<"users">) {
     availability: user.availability ?? null,
     age: user.age ?? null,
     education: user.education ?? null,
+    school: user.school ?? null,
+    track: user.track ?? null,
     experience: user.experience ?? null,
     accountType: user.accountType ?? null,
   } as const;

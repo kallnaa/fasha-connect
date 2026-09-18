@@ -1,14 +1,16 @@
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="64" height="64" rx="16" fill="#0D9488"/>
-  <rect x="0" y="0" width="64" height="64" rx="16" fill="url(#shine)" fill-opacity="0.18"/>
+  <!-- green disc -->
+  <circle cx="32" cy="32" r="30" fill="#1D9E78"/>
+  <!-- soft top-left highlight -->
+  <circle cx="32" cy="32" r="30" fill="url(#shine)"/>
   <defs>
-    <linearGradient id="shine" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#5EEAD4"/>
-      <stop offset="1" stop-color="#0D9488" stop-opacity="0"/>
-    </linearGradient>
+    <radialGradient id="shine" cx="0.3" cy="0.25" r="0.9">
+      <stop stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <!-- open hand -->
-  <path d="M14 40c4-1 7-1 10 1l8 4c2 1 4 1 6 0l12-6c2-1 4 0 5 2s0 4-2 5l-13 7c-4 2-8 2-12 0l-9-4c-3-1-6-1-9 0l-2 1c-2 1-4-2-3-4l2-4c2-1 4-2 7-2z" fill="#FFFFFF"/>
-  <!-- heart -->
-  <path d="M38 14c2.6-2.8 7-2.8 9.6 0 2.4 2.6 2.4 6.6 0 9.2L38 33l-9.6-9.8c-2.4-2.6-2.4-6.6 0-9.2 2.6-2.8 7-2.8 9.6 0z" fill="#FB7185"/>
+  <!-- white wave (helping hand / water) -->
+  <path d="M12 40c6-2 10-2 15 1 4 2.2 8 2.2 12 0 5-2.7 9-2.7 13 0v4c-4-2.7-8-2.7-13 0-4 2.2-8 2.2-12 0-5-2.7-9-2.7-15 0z" fill="#FFFFFF"/>
+  <!-- rose heart -->
+  <path d="M32 12c2.9-3.4 8.2-3.4 11.2 0 2.8 3.3 2.8 8.2 0 11.5L32 35.5l-11.2-12C18 20.2 18 15.3 20.8 12c3-3.4 8.3-3.4 11.2 0z" fill="#FB6D7E"/>
 </svg>

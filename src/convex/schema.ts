@@ -83,6 +83,8 @@ const schema = defineSchema(
       availability: v.optional(v.string()),
       age: v.optional(v.number()),
       education: v.optional(v.string()),
+      school: v.optional(v.string()), // high school / institution
+      track: v.optional(v.string()), // study track / combination (e.g. MPC, HEG)
       experience: v.optional(v.string()),
       savedOpportunities: v.optional(v.array(v.id("opportunities"))),
       onboardedAt: v.optional(v.number()), // set when the volunteer survey is completed/skipped
@@ -191,18 +193,27 @@ const schema = defineSchema(
       .index("by_opportunity", ["opportunityId"])
       .index("by_opportunity_volunteer", ["opportunityId", "volunteerId"]),
 
-    // Digital certificates & verified achievements uploaded by volunteers
+    // Digital certificates & verified achievements on volunteer profiles.
+    // Two origins: "self" (volunteer upload) and "organization" (issued via
+    // the org's Mark as Completed trigger — verified & impact stats included).
     certificates: defineTable({
       volunteerId: v.id("users"),
       title: v.string(),
-      issuer: v.optional(v.string()), // issuing organization / program
+      issuer: v.optional(v.string()),
       issuedAt: v.optional(v.number()),
-      fileUrl: v.optional(v.string()), // uploaded file (image/PDF) URL
+      fileUrl: v.optional(v.string()),
       fileName: v.optional(v.string()),
-      fileType: v.optional(v.string()), // mime type
-      verified: v.optional(v.boolean()), // achievement verified by an org
+      fileType: v.optional(v.string()),
+      verified: v.optional(v.boolean()),
       verifiedBy: v.optional(v.id("users")),
       verifiedAt: v.optional(v.number()),
+      // organization-issued impact record
+      source: v.optional(v.union(v.literal("self"), v.literal("organization"))),
+      opportunityId: v.optional(v.id("opportunities")),
+      opportunityTitle: v.optional(v.string()),
+      sector: v.optional(v.string()), // opportunity category (Education, Health, …)
+      hours: v.optional(v.number()), // verified volunteer hours
+      orgId: v.optional(v.id("users")),
       createdAt: v.number(),
     }).index("by_volunteer", ["volunteerId"]),
 

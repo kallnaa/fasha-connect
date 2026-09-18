@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  BadgeCheck,
   ChevronDown,
   Eye,
   MessageCircleQuestion,
@@ -32,6 +33,7 @@ import {
   StageChip,
   StatusChip,
 } from "@/components/clay";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 type Opp = {
@@ -66,6 +68,7 @@ type Applicant = {
   message: string | null;
   createdAt: number;
   matchScore: number;
+  sector?: string;
   criteriaMet: string[];
   criteriaMissed: string[];
   infoRequest: string | null;
@@ -303,11 +306,32 @@ function ApplicantCard({ applicant: a }: { applicant: Applicant }) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [showRequest, setShowRequest] = useState(false);
+  const [showComplete, setShowComplete] = useState(false);
+  const [hours, setHours] = useState("20");
   const [requestText, setRequestText] = useState("");
   const [expanded, setExpanded] = useState(false);
 
   const setStage = useMutation(api.applications.setStage);
   const requestInfo = useMutation(api.applications.requestInfo);
+  const markCompleted = useMutation(api.certificates.markCompleted);
+
+  const complete = async () => {
+    const n = Math.max(1, Math.floor(Number(hours) || 0));
+    setBusy(true);
+    try {
+      const res = await markCompleted({ applicationId: a._id as never, hours: n });
+      toast.success(
+        "created" in res && res.created
+          ? `Certificate issued — ${res.hours} verified hours added to ${v?.name?.split(" ")[0] ?? "the volunteer"}'s profile`
+          : "This engagement was already completed",
+      );
+      setShowComplete(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not mark as completed");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const move = async (stage: string) => {
     setBusy(true);
@@ -451,6 +475,11 @@ function ApplicantCard({ applicant: a }: { applicant: Applicant }) {
               <MessagesSquare className="size-4" /> Message
             </ClayButton>
           )}
+          {a.stage === "accepted" && (
+            <ClayButton size="sm" onClick={() => setShowComplete((v) => !v)}>
+              <BadgeCheck className="size-4" /> Mark as Completed
+            </ClayButton>
+          )}
         </div>
       </div>
 
@@ -467,6 +496,36 @@ function ApplicantCard({ applicant: a }: { applicant: Applicant }) {
               <Send className="size-3.5" /> Send request
             </ClayButton>
             <ClayButton size="sm" variant="outline" onClick={() => setShowRequest(false)}>
+              Cancel
+            </ClayButton>
+          </div>
+        </div>
+      )}
+
+      {showComplete && (
+        <div className="mt-3 rounded-2xl bg-mint/60 p-4">
+          <p className="flex items-center gap-1.5 text-sm font-bold text-teal-900">
+            <BadgeCheck className="size-4 text-teal-700" /> Issue a verified certificate
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-teal-900/80">
+            This adds an authenticated entry to {v?.name?.split(" ")[0] ?? "the volunteer"}'s
+            Impact Log with your organization as the issuer — total hours,
+            sector ({a.sector ?? "Community"}) and program name. The
+            volunteer is notified instantly.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <label className="text-xs font-bold text-teal-900">Verified hours</label>
+            <Input
+              type="number"
+              min={1}
+              value={hours}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setHours(e.target.value)}
+              className="clay-input h-9 w-24 rounded-xl px-3 text-sm font-semibold"
+            />
+            <ClayButton size="sm" onClick={complete} disabled={busy}>
+              {busy ? "Issuing…" : "Issue certificate"}
+            </ClayButton>
+            <ClayButton size="sm" variant="outline" onClick={() => setShowComplete(false)}>
               Cancel
             </ClayButton>
           </div>
