@@ -107,6 +107,10 @@ export default function Dashboard() {
   // org accounts are redirected to the org console (hooks ran above)
   if (isOrg) return <Navigate to="/org" replace />;
 
+  // volunteers who haven't completed the matching survey are routed there
+  // first, so the dashboard never renders with an empty, unpersonalized feed
+  if (user && !user.onboardedAt) return <Navigate to="/onboarding" replace />;
+
   return (
     <AppShell>
       {/* Greeting */}

@@ -1,16 +1,29 @@
+import { useMutation } from "convex/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useAuth } from "@/hooks/use-auth";
-import { ClayBlob, ClayButton, ClayCard, ClayChip } from "@/components/clay";
+import { api } from "@/convex/_generated/api";
+import { ClayButton, ClayCard, ClayChip } from "@/components/clay";
 import logo from "@/assets/logo.svg";
-import { ArrowRight, Loader2, Mail, UserX } from "lucide-react";
-import { Suspense, useEffect, useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  Check,
+  HeartHandshake,
+  Loader2,
+  Mail,
+  UserX,
+} from "lucide-react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 
 interface AuthProps {
   redirectAfterAuth?: string;
 }
+
+type Role = "volunteer" | "organization";
 
 function resolveRedirectAfterAuth(returnTo: string | null, fallback = "/dashboard") {
   if (returnTo?.startsWith("/") && !returnTo.startsWith("//")) {
@@ -20,20 +33,66 @@ function resolveRedirectAfterAuth(returnTo: string | null, fallback = "/dashboar
 }
 
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
-  const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
+  const { isLoading: authLoading, isAuthenticated, user, signIn } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirect = resolveRedirectAfterAuth(searchParams.get("returnTo"), redirectAfterAuth);
-  const [step, setStep] = useState<"signIn" | { email: string }>("signIn");
+  const returnTo = searchParams.get("returnTo");
+  const redirect = resolveRedirectAfterAuth(returnTo, redirectAfterAuth);
+  const setInitialRole = useSetInitialRoleMutation();
+
+  // Role can arrive preselected from landing CTAs (?role=organization)
+  const roleParam = searchParams.get("role");
+  const [role, setRole] = useState<Role | null>(
+    roleParam === "organization" || roleParam === "volunteer" ? roleParam : null,
+  );
+  const [step, setStep] = useState<"role" | "signIn" | { email: string }>(
+    roleParam === "organization" || roleParam === "volunteer" ? "signIn" : "role",
+  );
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /** While a just-chosen role is being persisted, the explicit navigate in the
+   *  submit handler owns routing; the effect below stays out of the way. */
+  const pendingRole = useRef<Role | null>(null);
+
+  /**
+   * Single source of truth for post-auth routing. Runs whenever auth state or
+   * the user document changes — including right after email OTP / guest sign-in
+   * — so new and returning users both land in the right experience:
+   *   organization            → /org (org console + org navigation)
+   *   volunteer, not onboarded → /onboarding (matching survey)
+   *   volunteer, onboarded     → returnTo or /dashboard
+   */
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      navigate(redirect);
+    if (authLoading || !isAuthenticated) return;
+    if (user === undefined) return; // user row still loading
+    if (pendingRole.current) return; // submit handler is routing explicitly
+
+    if (user?.accountType === "organization") {
+      navigate("/org", { replace: true });
+    } else if (user?.accountType === "volunteer") {
+      if (user?.onboardedAt) {
+        navigate(redirect, { replace: true });
+      } else {
+        navigate(
+          returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
+            ? `/onboarding?returnTo=${encodeURIComponent(returnTo)}`
+            : "/onboarding",
+          { replace: true },
+        );
+      }
+    } else {
+      // No role stored yet — route straight into the volunteer survey, which
+      // collects everything needed for matching (works for guests too).
+      navigate(
+        returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
+          ? `/onboarding?returnTo=${encodeURIComponent(returnTo)}`
+          : "/onboarding",
+        { replace: true },
+      );
     }
-  }, [authLoading, isAuthenticated, navigate, redirect]);
+  }, [authLoading, isAuthenticated, user, navigate, redirect, returnTo]);
 
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -55,6 +114,35 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
+  /** Where each role lands immediately after sign-up. */
+  const destinationForRole = (r: Role) => {
+    if (r === "organization") return "/org";
+    return returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
+      ? `/onboarding?returnTo=${encodeURIComponent(returnTo)}`
+      : "/onboarding";
+  };
+
+  const persistRole = async () => {
+    const effective: Role = role ?? "volunteer";
+    pendingRole.current = effective;
+    try {
+      await setInitialRole({ accountType: effective });
+      navigate(destinationForRole(effective), { replace: true });
+    } catch {
+      // Existing accounts keep their stored role — route by that instead.
+      pendingRole.current = null;
+      if (user?.accountType === "organization") {
+        navigate("/org", { replace: true });
+      } else if (user?.accountType === "volunteer") {
+        navigate(user.onboardedAt ? redirect : destinationForRole("volunteer"), {
+          replace: true,
+        });
+      } else {
+        navigate(destinationForRole(effective), { replace: true });
+      }
+    }
+  };
+
   const handleOtpSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
@@ -62,12 +150,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     try {
       const formData = new FormData(event.currentTarget);
       await signIn("email-otp", formData);
-      navigate(redirect);
+      // Role is stored immediately; the routing effect above performs the redirect.
+      await persistRole();
     } catch (error) {
       console.error("OTP verification error:", error);
       setError("The verification code you entered is incorrect.");
       setOtp("");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -77,7 +165,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setError(null);
     try {
       await signIn("anonymous");
-      navigate(redirect);
+      // Guests default to the volunteer experience unless they picked Organization
+      await persistRole();
     } catch (error) {
       console.error("Guest login error:", error);
       setError(
@@ -87,13 +176,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
+  const changeRole = (r: Role) => {
+    setRole(r);
+    setStep("signIn");
+    setError(null);
+  };
+
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden">
       <div aria-hidden className="pointer-events-none absolute inset-0">
-        <ClayBlob className="-top-24 -right-20 size-96" color="bg-peach/45" />
-        <ClayBlob className="-bottom-28 -left-24 size-[26rem]" color="bg-mint/40" />
-        <ClayBlob className="top-1/4 -left-16 size-56" color="bg-sky/35" />
-        <ClayBlob className="bottom-1/4 right-1/4 size-40" color="bg-butter/45" />
+        <div className="clay-blob absolute -top-32 -left-32 size-[28rem] bg-teal-200/50" />
+        <div className="clay-blob absolute -bottom-32 -right-32 size-[28rem] bg-rose-200/50" />
       </div>
 
       <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-10">
@@ -106,12 +199,107 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           </div>
 
           <ClayCard className="p-8">
-            {step === "signIn" ? (
+            {step === "role" ? (
               <>
                 <div className="text-center">
                   <ClayChip className="bg-teal-50 px-4 py-1.5 text-sm font-bold text-teal-800">
                     🇷🇼 Karibu! Welcome
                   </ClayChip>
+                  <h1 className="mt-4 font-display text-2xl font-extrabold tracking-tight">
+                    How will you use Fasha?
+                  </h1>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    Pick your account type — we'll set up the right experience
+                    for you from the start.
+                  </p>
+                </div>
+
+                <div className="mt-7 grid gap-3">
+                  <button
+                    onClick={() => changeRole("volunteer")}
+                    className="clay-press group rounded-3xl border-2 border-border bg-card p-5 text-left transition-colors hover:border-primary/50"
+                  >
+                    <div className="flex items-center gap-4">
+                      <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-teal-50">
+                        <HeartHandshake className="size-6 text-primary" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-display text-lg font-extrabold">I'm a Volunteer</p>
+                        <p className="text-sm text-muted-foreground">
+                          Find opportunities and get matched with programs near me.
+                        </p>
+                      </div>
+                      <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => changeRole("organization")}
+                    className="clay-press group rounded-3xl border-2 border-border bg-card p-5 text-left transition-colors hover:border-primary/50"
+                  >
+                    <div className="flex items-center gap-4">
+                      <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-rose-50">
+                        <Building2 className="size-6 text-rose-600" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-display text-lg font-extrabold">
+                          We're an Organization
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Post opportunities and manage volunteer applicants.
+                        </p>
+                      </div>
+                      <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                    </div>
+                  </button>
+                </div>
+
+                <div className="mt-6 flex items-center gap-3">
+                  <span className="h-0.5 flex-1 rounded-full bg-border" />
+                  <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    or
+                  </span>
+                  <span className="h-0.5 flex-1 rounded-full bg-border" />
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={handleGuestLogin}
+                  disabled={isLoading}
+                  className="mt-5 w-full rounded-2xl font-bold"
+                  variant="outline"
+                >
+                  <UserX />
+                  Continue as guest
+                </Button>
+              </>
+            ) : step === "signIn" ? (
+              <>
+                <div className="text-center">
+                  <ClayChip className="bg-teal-50 px-4 py-1.5 text-sm font-bold text-teal-800">
+                    🇷🇼 Karibu! Welcome
+                  </ClayChip>
+                  {role && (
+                    <div className="mt-3 flex items-center justify-center gap-2">
+                      <ClayChip className="bg-secondary px-3 py-1 text-xs font-bold">
+                        {role === "organization" ? (
+                          <>
+                            <Building2 className="size-3 text-rose-600" /> Organization account
+                          </>
+                        ) : (
+                          <>
+                            <HeartHandshake className="size-3 text-primary" /> Volunteer account
+                          </>
+                        )}
+                      </ClayChip>
+                      <button
+                        className="text-xs font-bold text-primary hover:underline"
+                        onClick={() => setStep("role")}
+                      >
+                        change
+                      </button>
+                    </div>
+                  )}
                   <h1 className="mt-4 font-display text-2xl font-extrabold tracking-tight">
                     Sign in or create account
                   </h1>
@@ -168,8 +356,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   Continue as guest
                 </Button>
                 <p className="mt-4 text-center text-xs leading-relaxed text-muted-foreground">
-                  Volunteering with an organization? Choose the organization
-                  account type after signing in.
+                  {role === "organization"
+                    ? "You'll land straight in your organization console."
+                    : "Volunteers get a 1-minute setup to personalize their matches."}
                 </p>
               </>
             ) : (
@@ -223,7 +412,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       </>
                     ) : (
                       <>
-                        Verify code <ArrowRight />
+                        Verify code <Check />
                       </>
                     )}
                   </ClayButton>
@@ -238,7 +427,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       setError(null);
                     }}
                   >
-                    Use a different email
+                    <ArrowLeft className="size-4" /> Use a different email
                   </Button>
                 </div>
               </>
@@ -252,6 +441,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       </div>
     </div>
   );
+}
+
+function useSetInitialRoleMutation() {
+  return useMutation(api.profiles.setInitialRole);
 }
 
 export default function AuthPage(props: AuthProps) {

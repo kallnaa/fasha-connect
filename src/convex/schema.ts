@@ -85,6 +85,7 @@ const schema = defineSchema(
       education: v.optional(v.string()),
       experience: v.optional(v.string()),
       savedOpportunities: v.optional(v.array(v.id("opportunities"))),
+      onboardedAt: v.optional(v.number()), // set when the volunteer survey is completed/skipped
 
       // Organization profile
       orgLogo: v.optional(v.string()), // image URL

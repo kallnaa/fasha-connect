@@ -26,8 +26,8 @@ export function RequireOrg({ children }: { children: ReactNode }) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background px-4">
         <ClayCard className="max-w-md p-10 text-center">
-          <span className="mx-auto flex size-14 items-center justify-center rounded-3xl bg-sky/70 shadow-inner">
-            <Building2 className="size-7 text-[#1e3a52]" />
+          <span className="mx-auto flex size-14 items-center justify-center rounded-3xl bg-sky">
+            <Building2 className="size-7 text-sky-900" />
           </span>
           <h1 className="mt-5 font-display text-2xl font-extrabold">Organizations only</h1>
           <p className="mt-2 text-sm text-muted-foreground">

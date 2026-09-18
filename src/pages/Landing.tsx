@@ -83,7 +83,7 @@ export default function Landing() {
               <a href="#about" className="transition-colors hover:text-foreground">
                 About Us
               </a>
-              <Link to="/auth" className="transition-colors hover:text-foreground">
+              <Link to="/auth?role=organization" className="transition-colors hover:text-foreground">
                 For Organizations
               </Link>
             </nav>
@@ -132,7 +132,7 @@ export default function Landing() {
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <ClayButton asChild size="lg" className="px-7 text-base">
-                  <Link to="/auth">
+                  <Link to="/auth?role=volunteer">
                     Find Opportunities <ArrowRight />
                   </Link>
                 </ClayButton>
@@ -142,7 +142,7 @@ export default function Landing() {
                   size="lg"
                   className="border-2 border-[#0f172a]/80 bg-white px-7 text-base text-[#0f172a] shadow-none hover:bg-secondary"
                 >
-                  <Link to="/auth">
+                  <Link to="/auth?role=organization">
                     <Building2 /> Register as Organization
                   </Link>
                 </ClayButton>
@@ -287,9 +287,8 @@ export default function Landing() {
               <p className="mt-2 max-w-xl text-muted-foreground">
                 A taste of what organizations across Rwanda are posting this week.
               </p>
-            </div>
-            <ClayButton asChild variant="outline" className="border-2 border-[#0f172a]/80 bg-white text-[#0f172a] shadow-none hover:bg-secondary">
-              <Link to={isAuthenticated ? "/opportunities" : "/auth"}>
+            </div>              <ClayButton asChild variant="outline" className="border-2 border-[#0f172a]/80 bg-white text-[#0f172a] shadow-none hover:bg-secondary">
+              <Link to={isAuthenticated ? "/opportunities" : "/auth?role=volunteer"}>
                 Browse all <Search />
               </Link>
             </ClayButton>
@@ -327,7 +326,7 @@ export default function Landing() {
                       {opp.slots - opp.slotsFilled} of {opp.slots} spots left
                     </span>
                     <ClayButton asChild size="sm">
-                      <Link to="/auth">Apply</Link>
+                      <Link to="/auth?role=volunteer">Apply</Link>
                     </ClayButton>
                   </div>
                 </ClayCard>
@@ -433,7 +432,7 @@ export default function Landing() {
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <ClayButton asChild size="lg" className="px-8">
-                  <Link to="/auth">Join Fasha</Link>
+                  <Link to="/auth?role=volunteer">Join Fasha</Link>
                 </ClayButton>
                 <ClayButton
                   asChild
@@ -441,7 +440,7 @@ export default function Landing() {
                   size="lg"
                   className="border-2 border-white/40 bg-transparent px-8 text-white shadow-none hover:bg-white/10"
                 >
-                  <Link to="/auth">Register as Organization</Link>
+                  <Link to="/auth?role=organization">Register as Organization</Link>
                 </ClayButton>
               </div>
               <p className="mt-5 text-xs text-slate-400">

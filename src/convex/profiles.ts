@@ -4,6 +4,57 @@ import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { getCurrentUser } from "./users";
 
+/**
+ * Set the caller's role (account type). Called right after sign-up/sign-in
+ * from the auth page so routing can trust `accountType` immediately.
+ * Idempotent; role can only be changed while it is unset.
+ */
+export const setInitialRole = mutation({
+  args: { accountType: v.union(v.literal("volunteer"), v.literal("organization")) },
+  handler: async (ctx, { accountType }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not signed in");
+    if (user.accountType && user.accountType !== accountType) {
+      throw new Error(
+        "This account already has a role. Manage it from your profile page.",
+      );
+    }
+    if (user.accountType === accountType) return user._id;
+    await ctx.db.patch(user._id, { accountType });
+    return user._id;
+  },
+});
+
+/**
+ * One-shot volunteer onboarding survey. Returns the new recommendations seed
+ * (district) and marks onboarding complete so the dashboard can render.
+ */
+export const completeOnboarding = mutation({
+  args: {
+    name: v.optional(v.string()),
+    interests: v.array(v.string()),
+    skills: v.array(v.string()),
+    district: v.optional(v.string()),
+    availability: v.optional(v.string()),
+  },
+  handler: async (ctx, { name, interests, skills, district, availability }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not signed in");
+
+    const patch: Record<string, unknown> = {
+      interests,
+      skills,
+      onboardedAt: Date.now(),
+    };
+    if (name && name.trim()) patch.name = name.trim();
+    if (district && district !== "all") patch.district = district;
+    if (availability && availability !== "all") patch.availability = availability;
+
+    await ctx.db.patch(user._id, patch);
+    return user._id;
+  },
+});
+
 /** Create or update the signed-in user's Fasha profile. */
 export const upsertProfile = mutation({
   args: {
