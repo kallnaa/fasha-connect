@@ -107,11 +107,10 @@ export function AppShell({
 
   return (
     <div className="min-h-screen">
-      {/* pastel blobs backdrop */}
+      {/* soft atmosphere backdrop */}
       <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="clay-blob absolute -top-24 -left-24 size-96 bg-peach/40" />
-        <div className="clay-blob absolute top-1/3 -right-32 size-[28rem] bg-mint/35" />
-        <div className="clay-blob absolute -bottom-32 left-1/4 size-80 bg-sky/30" />
+        <div className="clay-blob absolute -top-32 -left-32 size-[30rem] bg-teal-100/60" />
+        <div className="clay-blob absolute top-1/3 -right-40 size-[28rem] bg-rose-100/60" />
       </div>
 
       <header className="sticky top-0 z-40 px-3 pt-3 sm:px-5 sm:pt-4">
@@ -122,7 +121,7 @@ export function AppShell({
               Fasha
             </span>
             {isOrg && (
-              <span className="ml-1 hidden rounded-full bg-sky/60 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[#1e3a52] sm:inline">
+              <span className="ml-1 hidden rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-teal-800 sm:inline">
                 Org
               </span>
             )}
@@ -141,7 +140,7 @@ export function AppShell({
               aria-label={`Messages${msgUnread ? ` (${msgUnread} unread)` : ""}`}
               className={cn(
                 "relative flex size-9 items-center justify-center rounded-full bg-secondary/70 transition-colors hover:bg-secondary",
-                msgUnread > 0 && "bg-mint/70",
+                msgUnread > 0 && "bg-mint text-teal-800",
               )}
             >
               <MessagesSquare className="size-4" />
@@ -160,7 +159,7 @@ export function AppShell({
                 aria-label="Notifications"
                 className={cn(
                   "relative rounded-full bg-secondary/70 hover:bg-secondary",
-                  unread > 0 && "bg-butter/70",
+                  unread > 0 && "bg-butter text-yellow-800",
                 )}
                 onClick={() => setNotifOpen((v) => !v)}
               >
@@ -196,11 +195,10 @@ export function AppShell({
                       notifications.map((n) => (
                         <button
                           key={n._id}
-                          onClick={() => openNotification(n)}
-                          className={cn(
-                            "w-full rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-secondary/60",
-                            !n.read && "bg-butter/40",
-                          )}
+                          onClick={() => openNotification(n)}                            className={cn(
+                              "w-full rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-secondary/60",
+                              !n.read && "bg-teal-50",
+                            )}
                         >
                           <p className="text-sm font-bold">{n.title}</p>
                           <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
@@ -242,7 +240,7 @@ export function AppShell({
                       {user?.email ?? "Guest account"}
                     </p>
                     {isOrg && user?.verification === "verified" && (
-                      <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-[#22503a]">
+                      <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-teal-800">
                         <BadgeCheck className="size-3.5" /> Verified Organization
                       </p>
                     )}
@@ -302,7 +300,7 @@ function ShellNavLink({
           "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold transition-colors",
           stacked && "w-full px-3 py-2",
           isActive
-            ? "bg-primary text-primary-foreground clay-chip"
+            ? "bg-primary/10 text-primary clay-chip"
             : "text-muted-foreground hover:bg-secondary hover:text-foreground",
         )
       }

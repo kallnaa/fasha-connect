@@ -157,7 +157,7 @@ export default function OrgOpportunities() {
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusChip status={opp.status} />
                     {opp.isPaused && (
-                      <ClayChip className="bg-butter/70 text-[#6b4e12]">
+                      <ClayChip className="bg-butter text-yellow-800">
                         <Pause className="size-3" /> Paused
                       </ClayChip>
                     )}
@@ -268,13 +268,13 @@ function ApplicantsList({ opportunityId }: { opportunityId: string }) {
         <button
           onClick={() => setOnlyMatching((v) => !v)}
           className={`clay-chip px-3 py-1 text-xs font-bold ${
-            onlyMatching ? "bg-mint text-[#22503a]" : "bg-secondary/80 hover:bg-secondary"
+            onlyMatching ? "bg-mint text-teal-800" : "bg-secondary/80 hover:bg-secondary"
           }`}
         >
           Great matches only
         </button>
         {minScore > 0 && (
-          <button onClick={() => setMinScore(0)} className="clay-chip bg-peach/70 px-3 py-1 text-xs font-bold text-[#7c2d12]">
+          <button onClick={() => setMinScore(0)} className="clay-chip bg-peach px-3 py-1 text-xs font-bold text-rose-800">
             Clear {minScore}+ filter
           </button>
         )}
@@ -378,10 +378,10 @@ function ApplicantCard({ applicant: a }: { applicant: Applicant }) {
                     Eligibility check
                   </p>
                   {a.criteriaMet.map((m) => (
-                    <p key={m} className="mt-1 text-xs font-semibold text-[#22503a]">✓ {m}</p>
+                    <p key={m} className="mt-1 text-xs font-semibold text-teal-800">✓ {m}</p>
                   ))}
                   {a.criteriaMissed.map((m) => (
-                    <p key={m} className="mt-1 text-xs font-semibold text-[#7c2d12]">✗ {m}</p>
+                    <p key={m} className="mt-1 text-xs font-semibold text-rose-700">✗ {m}</p>
                   ))}
                 </div>
               )}
@@ -392,7 +392,7 @@ function ApplicantCard({ applicant: a }: { applicant: Applicant }) {
               )}
               {a.infoRequest && (
                 <div className="rounded-xl bg-butter/30 px-3 py-2">
-                  <p className="flex items-center gap-1.5 text-xs font-bold text-[#6b4e12]">
+                  <p className="flex items-center gap-1.5 text-xs font-bold text-yellow-700">
                     <MessageCircleQuestion className="size-3.5" /> You asked: {a.infoRequest}
                   </p>
                   {a.infoResponse ? (

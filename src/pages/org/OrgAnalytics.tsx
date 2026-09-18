@@ -60,8 +60,8 @@ export default function OrgAnalytics() {
             transition={{ duration: 0.35, delay: i * 0.05 }}
           >
             <ClayCard className="p-4">
-              <span className={`flex size-9 items-center justify-center rounded-xl ${s.color} shadow-inner`}>
-                <s.icon className="size-5 text-[#3d3327]" />
+              <span className={`flex size-9 items-center justify-center rounded-xl ${s.color}`}>
+                <s.icon className="size-5 text-foreground/70" />
               </span>
               <p className="mt-3 font-display text-2xl font-extrabold">{s.value}</p>
               <p className="text-xs font-semibold text-muted-foreground">{s.label}</p>

@@ -113,7 +113,7 @@ export default function Profile() {
             icon={HeartHandshake}
             title="Volunteer"
             body="Find opportunities and apply with my interests & skills."
-            chipClass="bg-peach/70 text-[#7c2d12]"
+            chipClass="bg-peach text-rose-800"
           />
           <TypeCard
             active={accountType === "organization"}
@@ -121,11 +121,11 @@ export default function Profile() {
             icon={Building2}
             title="Organization"
             body="Post opportunities and review volunteer applications."
-            chipClass="bg-sky/70 text-[#1e3a52]"
+            chipClass="bg-sky text-sky-900"
           />
         </div>
         {accountType === "organization" && (
-          <p className="mt-3 rounded-2xl bg-sky/30 px-4 py-2.5 text-xs font-semibold text-[#1e3a52]">
+          <p className="mt-3 rounded-2xl bg-sky px-4 py-2.5 text-xs font-semibold text-sky-900">
             After saving, you'll get the Organization console at{" "}
             <b>/org</b> — Dashboard, Opportunities, Post, Analytics and Profile.
           </p>
@@ -259,7 +259,7 @@ export default function Profile() {
                   Pick a few — these drive your recommendations.
                 </p>
               </div>
-              <ClayChip className="bg-butter/70 text-[#6b4e12]">{interests.length} selected</ClayChip>
+              <ClayChip className="bg-butter text-yellow-800">{interests.length} selected</ClayChip>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               {INTERESTS.map((item) => (
@@ -268,7 +268,7 @@ export default function Profile() {
                   label={item}
                   active={interests.includes(item)}
                   onClick={() => toggle(interests, setInterests, item)}
-                  activeClass="bg-peach text-[#7c2d12]"
+                  activeClass="bg-peach text-rose-800"
                 />
               ))}
             </div>
@@ -283,7 +283,7 @@ export default function Profile() {
                   label={item}
                   active={skills.includes(item)}
                   onClick={() => toggle(skills, setSkills, item)}
-                  activeClass="bg-mint text-[#22503a]"
+                  activeClass="bg-mint text-teal-800"
                 />
               ))}
             </div>
@@ -299,7 +299,7 @@ export default function Profile() {
                   label={opt}
                   active={availability === opt}
                   onClick={() => setAvailability(opt)}
-                  activeClass="bg-sky text-[#1e3a52]"
+                  activeClass="bg-sky text-sky-900"
                 />
               ))}
             </div>

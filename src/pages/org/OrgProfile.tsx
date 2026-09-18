@@ -107,13 +107,13 @@ export default function OrgProfile() {
           <div className="flex items-start gap-3">
             <span
               className={`flex size-12 items-center justify-center rounded-2xl shadow-inner ${
-                isVerified ? "bg-mint/70" : "bg-butter/70"
+                isVerified ? "bg-mint" : "bg-butter"
               }`}
             >
               {isVerified ? (
-                <BadgeCheck className="size-6 text-[#22503a]" />
+                <BadgeCheck className="size-6 text-teal-700" />
               ) : (
-                <ShieldCheck className="size-6 text-[#6b4e12]" />
+                <ShieldCheck className="size-6 text-yellow-700" />
               )}
             </span>
             <div>
@@ -128,7 +128,7 @@ export default function OrgProfile() {
             </div>
           </div>
           {isVerified ? (
-            <ClayChip className="bg-mint/70 px-4 py-1.5 text-sm text-[#22503a]">
+            <ClayChip className="bg-mint px-4 py-1.5 text-sm text-teal-800">
               <BadgeCheck className="size-4" /> Active
             </ClayChip>
           ) : (

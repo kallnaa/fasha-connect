@@ -109,7 +109,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             {step === "signIn" ? (
               <>
                 <div className="text-center">
-                  <ClayChip className="bg-butter/70 px-4 py-1.5 text-sm text-[#6b4e12]">
+                  <ClayChip className="bg-teal-50 px-4 py-1.5 text-sm font-bold text-teal-800">
                     🇷🇼 Karibu! Welcome
                   </ClayChip>
                   <h1 className="mt-4 font-display text-2xl font-extrabold tracking-tight">
@@ -175,7 +175,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             ) : (
               <>
                 <div className="text-center">
-                  <span className="mx-auto flex size-14 items-center justify-center rounded-3xl bg-primary/15">
+                  <span className="mx-auto flex size-14 items-center justify-center rounded-3xl bg-teal-50">
                     <Mail className="size-6 text-primary" />
                   </span>
                   <h1 className="mt-4 font-display text-2xl font-extrabold tracking-tight">

@@ -170,14 +170,14 @@ function ConversationList({
         >
           <div className="flex items-start justify-between gap-2">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="clay-shadow-primary flex size-10 shrink-0 items-center justify-center rounded-2xl bg-mint/70 text-sm font-extrabold text-[#22503a]">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-mint text-sm font-extrabold text-teal-800">
                 {initials(c.otherName)}
               </span>
               <div className="min-w-0">
                 <p className="flex items-center gap-1 truncate font-display font-bold">
                   {c.otherName}
                   {c.otherVerified === "verified" && (
-                    <BadgeCheck className="size-4 shrink-0 text-[#22503a]" />
+                    <BadgeCheck className="size-4 shrink-0 text-teal-700" />
                   )}
                   {c.locked && <Lock className="size-3.5 shrink-0 text-muted-foreground/60" />}
                 </p>
@@ -319,14 +319,14 @@ function ThreadPanel({
         >
           <ArrowLeft className="size-4" />
         </button>
-        <span className="clay-shadow-primary flex size-10 shrink-0 items-center justify-center rounded-2xl bg-mint/70 text-sm font-extrabold text-[#22503a]">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-mint text-sm font-extrabold text-teal-800">
           {initials(name)}
         </span>
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1 truncate font-display font-bold">
             {name}
             {thread.other.verified === "verified" && (
-              <BadgeCheck className="size-4 shrink-0 text-[#22503a]" />
+              <BadgeCheck className="size-4 shrink-0 text-teal-700" />
             )}
           </p>
           {thread.opportunity && (
@@ -347,10 +347,10 @@ function ThreadPanel({
       {/* Locked banner */}
       {thread.locked && (
         <div className="clay-shadow-inset mx-4 mt-3 flex items-start gap-2.5 rounded-2xl bg-peach/40 p-3">
-          <Lock className="mt-0.5 size-4 shrink-0 text-[#7c2d12]" />
+          <Lock className="mt-0.5 size-4 shrink-0 text-rose-700" />
           <div>
-            <p className="text-sm font-bold text-[#7c2d12]">This conversation is read-only</p>
-            <p className="text-xs text-[#7c2d12]/80">
+            <p className="text-sm font-bold text-rose-800">This conversation is read-only</p>
+            <p className="text-xs text-rose-800/80">
               {thread.lockReason ?? "The related application is no longer accepted."}
             </p>
           </div>
@@ -361,8 +361,8 @@ function ThreadPanel({
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {thread.messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <span className="flex size-14 items-center justify-center rounded-3xl bg-butter/60 shadow-inner">
-              <MessageSquare className="size-6 text-[#6b4e12]" />
+            <span className="flex size-14 items-center justify-center rounded-3xl bg-butter">
+              <MessageSquare className="size-6 text-muted-foreground" />
             </span>
             <p className="mt-3 font-display font-bold">Say muraho 👋</p>
             <p className="mt-1 max-w-xs text-sm text-muted-foreground">
@@ -378,7 +378,7 @@ function ThreadPanel({
                 {m.kind === "announcement" && (
                   <span
                     className={cn(
-                      "mb-1 inline-flex items-center gap-1 rounded-full bg-butter/70 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[#6b4e12]",
+                      "mb-1 inline-flex items-center gap-1 rounded-full bg-butter px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-yellow-800",
                       m.mine && "mr-1",
                     )}
                   >
@@ -481,8 +481,8 @@ function AnnouncementDialog({ onClose }: { onClose: () => void }) {
     >
       <ClayCard className="w-full max-w-lg p-6">
         <div className="flex items-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl bg-butter/70 shadow-inner">
-            <Megaphone className="size-5 text-[#6b4e12]" />
+          <span className="flex size-11 items-center justify-center rounded-2xl bg-butter">
+            <Megaphone className="size-5 text-rose-600" />
           </span>
           <div>
             <h2 className="font-display text-xl font-extrabold">Announce to volunteers</h2>

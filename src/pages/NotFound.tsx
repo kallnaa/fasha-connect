@@ -18,8 +18,8 @@ export default function NotFound() {
         className="relative z-10 w-full max-w-md"
       >
         <ClayCard className="p-10 text-center">
-          <span className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-sky/70 shadow-inner">
-            <Compass className="size-8 text-[#1e3a52]" />
+          <span className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-sky">
+            <Compass className="size-8 text-sky-700" />
           </span>
           <h1 className="mt-5 font-display text-6xl font-extrabold tracking-tight">404</h1>
           <p className="mt-2 font-display text-xl font-bold">This path leads nowhere</p>

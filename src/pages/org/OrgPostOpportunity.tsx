@@ -34,7 +34,7 @@ export default function OrgPostOpportunity() {
             : "Describe the role and set eligibility criteria. Fasha will match it to the right volunteers."}
         </p>
         {isEdit && existing && (
-          <p className="mt-2 inline-block rounded-full bg-butter/50 px-3 py-1 text-xs font-bold text-[#6b4e12]">
+          <p className="mt-2 inline-block rounded-full bg-butter px-3 py-1 text-xs font-bold text-yellow-800">
             Editing: {existing.title}
           </p>
         )}

@@ -68,11 +68,11 @@ export default function OrgDashboard() {
         className="flex flex-wrap items-center justify-between gap-4"
       >
         <div className="flex items-center gap-4">
-          <span className="flex size-14 items-center justify-center rounded-3xl bg-sky/70 shadow-inner">
+          <span className="flex size-14 items-center justify-center rounded-3xl bg-sky">
             {user?.orgLogo ? (
               <img src={user.orgLogo} alt="" className="size-14 rounded-3xl object-cover" />
             ) : (
-              <span className="font-display text-xl font-extrabold text-[#1e3a52]">
+              <span className="font-display text-xl font-extrabold text-sky-900">
                 {initials(user?.orgName ?? user?.name)}
               </span>
             )}
@@ -81,7 +81,7 @@ export default function OrgDashboard() {
             <p className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
               Organization console
               {isVerified && (
-                <span className="flex items-center gap-1 rounded-full bg-mint/60 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[#22503a]">
+                <span className="flex items-center gap-1 rounded-full bg-mint px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-teal-800">
                   <BadgeCheck className="size-3" /> Verified
                 </span>
               )}
@@ -103,8 +103,8 @@ export default function OrgDashboard() {
         <ClayCard className="mt-6 p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-start gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-butter/70 shadow-inner">
-                <ShieldCheck className="size-5 text-[#6b4e12]" />
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-butter">
+                <ShieldCheck className="size-5 text-yellow-700" />
               </span>
               <div>
                 <p className="font-display font-bold">Earn the Verified Organization badge</p>
@@ -155,8 +155,8 @@ export default function OrgDashboard() {
             transition={{ duration: 0.35, delay: 0.05 * i }}
           >
             <ClayCard className="p-4">
-              <span className={`flex size-9 items-center justify-center rounded-xl ${s.color} shadow-inner`}>
-                <s.icon className="size-5 text-[#3d3327]" />
+              <span className={`flex size-9 items-center justify-center rounded-xl ${s.color}`}>
+                <s.icon className="size-5 text-foreground/70" />
               </span>
               <p className="mt-3 font-display text-2xl font-extrabold">{s.value}</p>
               <p className="text-xs font-semibold text-muted-foreground">{s.label}</p>

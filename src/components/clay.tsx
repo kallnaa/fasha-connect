@@ -1,18 +1,18 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-/** Shared category → pastel clay color mapping. */
+/** Shared category → soft tint color mapping. */
 export const CATEGORY_COLORS: Record<string, string> = {
-  Education: "bg-butter/70",
-  Health: "bg-peach/70",
-  Environment: "bg-mint/70",
-  Community: "bg-lilac/70",
-  Agriculture: "bg-mint/50",
-  Technology: "bg-sky/70",
+  Education: "bg-butter text-yellow-800",
+  Health: "bg-peach text-rose-800",
+  Environment: "bg-mint text-teal-800",
+  Community: "bg-lilac text-violet-800",
+  Agriculture: "bg-mint/70 text-teal-800",
+  Technology: "bg-sky text-sky-800",
 };
 
 export function categoryColor(category: string) {
-  return CATEGORY_COLORS[category] ?? "bg-secondary";
+  return CATEGORY_COLORS[category] ?? "bg-secondary text-secondary-foreground";
 }
 
 /** Inflated clay card. */
@@ -94,12 +94,12 @@ export function ClayButton({
 
 /** Status badge colors for applications. */
 export const STATUS_STYLES: Record<string, string> = {
-  pending: "bg-butter/70 text-[#6b4e12]",
-  accepted: "bg-mint/70 text-[#22503a]",
-  declined: "bg-peach/70 text-[#7c2d12]",
-  open: "bg-mint/70 text-[#22503a]",
-  closed: "bg-peach/70 text-[#7c2d12]",
-  filled: "bg-sky/70 text-[#1e3a52]",
+  pending: "bg-butter text-yellow-800",
+  accepted: "bg-mint text-teal-800",
+  declined: "bg-peach text-rose-800",
+  open: "bg-mint text-teal-800",
+  closed: "bg-peach text-rose-800",
+  filled: "bg-sky text-sky-800",
 };
 
 export function StatusChip({ status }: { status: string }) {
@@ -112,11 +112,11 @@ export function StatusChip({ status }: { status: string }) {
 
 /** Org applicant pipeline stage chip colors (New → Reviewing → Shortlisted → Accepted/Rejected). */
 export const STAGE_STYLES: Record<string, string> = {
-  new: "bg-butter/70 text-[#6b4e12]",
-  reviewing: "bg-sky/70 text-[#1e3a52]",
-  shortlisted: "bg-lilac/70 text-[#4a3660]",
-  accepted: "bg-mint/70 text-[#22503a]",
-  rejected: "bg-peach/70 text-[#7c2d12]",
+  new: "bg-butter text-yellow-800",
+  reviewing: "bg-sky text-sky-800",
+  shortlisted: "bg-lilac text-violet-800",
+  accepted: "bg-mint text-teal-800",
+  rejected: "bg-peach text-rose-800",
 };
 
 export function StageChip({ stage }: { stage: string }) {
@@ -136,7 +136,7 @@ export function StageChip({ stage }: { stage: string }) {
 
 /** Color for a 0-100 match score. */
 export function matchScoreColor(score: number) {
-  if (score >= 75) return "bg-mint text-[#22503a]";
-  if (score >= 45) return "bg-butter text-[#6b4e12]";
-  return "bg-peach text-[#7c2d12]";
+  if (score >= 75) return "bg-mint text-teal-800";
+  if (score >= 45) return "bg-butter text-yellow-800";
+  return "bg-peach text-rose-800";
 }

@@ -377,7 +377,7 @@ export default function OpportunityForm() {
                     }
                     className={`clay-chip px-2.5 py-0.5 text-[11px] font-bold transition-all ${
                       eligDistricts.includes(d)
-                        ? "bg-sky text-[#1e3a52]"
+                        ? "bg-sky text-sky-900"
                         : "bg-secondary/70 hover:bg-secondary"
                     }`}
                   >
@@ -402,7 +402,7 @@ export default function OpportunityForm() {
                     }
                     className={`clay-chip px-2.5 py-0.5 text-[11px] font-bold transition-all ${
                       eligSkills.includes(s)
-                        ? "bg-mint text-[#22503a]"
+                        ? "bg-mint text-teal-800"
                         : "bg-secondary/70 hover:bg-secondary"
                     }`}
                   >

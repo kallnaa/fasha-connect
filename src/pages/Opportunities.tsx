@@ -213,8 +213,8 @@ export default function Opportunities() {
                         <ClayChip
                           className={
                             deadlinePassed
-                              ? "bg-peach/70 text-[#7c2d12]"
-                              : "bg-butter/70 text-[#6b4e12]"
+                              ? "bg-peach text-rose-800"
+                              : "bg-butter text-yellow-800"
                           }
                         >
                           <CalendarClock className="size-3" />
@@ -247,7 +247,7 @@ export default function Opportunities() {
                       <Users className="size-3.5" /> {spotsLeft} left · {opp.commitment}
                     </span>
                     {applied ? (
-                      <ClayChip className="bg-mint/70 px-3 py-1.5 text-[#22503a]">
+                      <ClayChip className="bg-mint px-3 py-1.5 text-teal-800">
                         <CheckCircle2 className="size-3.5" /> Applied
                       </ClayChip>
                     ) : (

@@ -1,20 +1,14 @@
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Fasha clay logo: two plush hands forming a heart -->
-  <rect width="64" height="64" rx="18" fill="#F5B78F"/>
-  <rect width="64" height="64" rx="18" fill="url(#shade)" fill-opacity="0.35"/>
-  <path d="M22 40 C16 34, 15 26, 20 22 C24 19, 28 20, 30 24 C32 20, 36 19, 40 22 C45 26, 44 34, 38 40 L30 47 Z" fill="#E07A3F"/>
-  <path d="M22 40 C16 34, 15 26, 20 22 C24 19, 28 20, 30 24 L30 47 Z" fill="#E8854A"/>
-  <path d="M26 44 L30 47 L34 44" stroke="#C05A28" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-  <circle cx="27" cy="26" r="1.8" fill="#FFF8F0"/>
-  <circle cx="35" cy="26" r="1.8" fill="#FFF8F0"/>
-  <rect x="14" y="12" width="8" height="8" rx="4" fill="#A8D5BA" fill-opacity="0.9"/>
-  <rect x="44" y="44" width="7" height="7" rx="3.5" fill="#F5D98F" fill-opacity="0.9"/>
-  <rect x="43" y="11" width="6" height="6" rx="3" fill="#A5C8E0" fill-opacity="0.85"/>
+  <rect width="64" height="64" rx="16" fill="#0D9488"/>
+  <rect x="0" y="0" width="64" height="64" rx="16" fill="url(#shine)" fill-opacity="0.18"/>
   <defs>
-    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFE8D6" stop-opacity="0.9"/>
-      <stop offset="0.5" stop-color="#FFE8D6" stop-opacity="0"/>
-      <stop offset="1" stop-color="#C05A28" stop-opacity="0.6"/>
+    <linearGradient id="shine" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5EEAD4"/>
+      <stop offset="1" stop-color="#0D9488" stop-opacity="0"/>
     </linearGradient>
   </defs>
+  <!-- open hand -->
+  <path d="M14 40c4-1 7-1 10 1l8 4c2 1 4 1 6 0l12-6c2-1 4 0 5 2s0 4-2 5l-13 7c-4 2-8 2-12 0l-9-4c-3-1-6-1-9 0l-2 1c-2 1-4-2-3-4l2-4c2-1 4-2 7-2z" fill="#FFFFFF"/>
+  <!-- heart -->
+  <path d="M38 14c2.6-2.8 7-2.8 9.6 0 2.4 2.6 2.4 6.6 0 9.2L38 33l-9.6-9.8c-2.4-2.6-2.4-6.6 0-9.2 2.6-2.8 7-2.8 9.6 0z" fill="#FB7185"/>
 </svg>
