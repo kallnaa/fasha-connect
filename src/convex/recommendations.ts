@@ -16,8 +16,14 @@ export type ScoredOpportunity = {
   type: string;
   deadline: number | null;
   score: number;
+  matchPercent: number;
   matchReasons: string[];
 };
+
+/** Normalize a raw match score into a 10-99% badge value (top scores ≈ 95%+). */
+function toMatchPercent(score: number) {
+  return Math.max(10, Math.min(99, Math.round((score / 120) * 100)));
+}
 
 /**
  * Personalized recommendations: score open opportunities against the
@@ -131,6 +137,7 @@ export const recommend = query({
           type: o.type ?? "Volunteer",
           deadline: o.deadline ?? null,
           score,
+          matchPercent: toMatchPercent(score),
           matchReasons: reasons.slice(0, 3),
         };
       });

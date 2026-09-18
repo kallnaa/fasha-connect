@@ -73,6 +73,23 @@ export default function Onboarding() {
   const canContinue =
     step === 1 ? interests.length > 0 : step === 2 ? skills.length > 0 : step === 3 ? !!district : true;
 
+  /**
+   * Volunteers must never be routed into org-only areas. Strip any org
+   * destination (or /auth) from the return path before following it.
+   */
+  const safeReturnTo = () => {
+    if (!returnTo || !returnTo.startsWith("/") || returnTo.startsWith("//")) return null;
+    if (
+      returnTo === "/org" ||
+      returnTo.startsWith("/org/") ||
+      returnTo === "/auth" ||
+      returnTo.startsWith("/auth?")
+    ) {
+      return null;
+    }
+    return returnTo;
+  };
+
   const finish = async (opts?: { skip?: boolean }) => {
     setSaving(true);
     try {
@@ -88,12 +105,7 @@ export default function Onboarding() {
           ? "You can personalize anytime from your profile"
           : "You're all set — matches are ready!",
       );
-      navigate(
-        returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
-          ? returnTo
-          : "/dashboard",
-        { replace: true },
-      );
+      navigate(safeReturnTo() ?? "/dashboard", { replace: true });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not save your profile");
       setSaving(false);

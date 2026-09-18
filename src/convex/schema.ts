@@ -191,6 +191,21 @@ const schema = defineSchema(
       .index("by_opportunity", ["opportunityId"])
       .index("by_opportunity_volunteer", ["opportunityId", "volunteerId"]),
 
+    // Digital certificates & verified achievements uploaded by volunteers
+    certificates: defineTable({
+      volunteerId: v.id("users"),
+      title: v.string(),
+      issuer: v.optional(v.string()), // issuing organization / program
+      issuedAt: v.optional(v.number()),
+      fileUrl: v.optional(v.string()), // uploaded file (image/PDF) URL
+      fileName: v.optional(v.string()),
+      fileType: v.optional(v.string()), // mime type
+      verified: v.optional(v.boolean()), // achievement verified by an org
+      verifiedBy: v.optional(v.id("users")),
+      verifiedAt: v.optional(v.number()),
+      createdAt: v.number(),
+    }).index("by_volunteer", ["volunteerId"]),
+
     messages: defineTable({
       conversationId: v.id("conversations"),
       senderId: v.id("users"),

@@ -81,6 +81,9 @@ export function MessagesLayout({ basePath, isOrg }: { basePath: string; isOrg: b
         {isOrg && <AnnouncementButton />}
       </div>
 
+      {/* Volunteer only: live application status updates */}
+      {!isOrg && <ApplicationUpdates />}
+
       <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(280px,360px)_1fr]">
         {/* Conversation list */}
         <div className={cn("space-y-3", activeId && "hidden lg:block")}>
@@ -108,6 +111,90 @@ export function MessagesLayout({ basePath, isOrg }: { basePath: string; isOrg: b
         </div>
       </div>
     </AppShell>
+  );
+}
+
+/* ---------------------- Volunteer application updates ---------------------- */
+
+const STAGE_DOT: Record<string, string> = {
+  new: "bg-butter",
+  reviewing: "bg-sky",
+  shortlisted: "bg-lilac",
+  accepted: "bg-mint",
+  rejected: "bg-peach",
+};
+
+const STAGE_TEXT: Record<string, string> = {
+  new: "text-yellow-800",
+  reviewing: "text-sky-900",
+  shortlisted: "text-violet-800",
+  accepted: "text-teal-800",
+  rejected: "text-rose-700",
+};
+
+/** Volunteer-only strip: latest status of each application, straight from the org pipeline. */
+function ApplicationUpdates() {
+  const apps = useQuery(api.applications.listMine, {}) as
+    | Array<{
+        _id: string;
+        stage: string;
+        status: string;
+        conversationId?: string | null;
+        opportunity: { title: string; orgName: string } | null;
+      }>
+    | undefined;
+  const navigate = useNavigate();
+
+  if (!apps) {
+    return (
+      <ClayCard className="mt-6 animate-pulse p-5">
+        <div className="h-4 w-40 rounded-full bg-secondary" />
+        <div className="mt-3 h-3 w-2/3 rounded-full bg-secondary/70" />
+      </ClayCard>
+    );
+  }
+  if (apps.length === 0) return null;
+
+  return (
+    <ClayCard className="mt-6 p-5">
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-base font-bold">Application status</h2>
+        <ClayChip className="bg-secondary text-xs text-muted-foreground">
+          {apps.length} active
+        </ClayChip>
+      </div>
+      <div className="mt-3 flex snap-x gap-3 overflow-x-auto pb-1">
+        {apps.map((a) => (
+          <div
+            key={a._id}
+            className="clay-shadow-inset min-w-56 shrink-0 snap-start rounded-2xl bg-secondary/50 p-3.5"
+          >
+            <p className="truncate text-sm font-bold">{a.opportunity?.title ?? "Opportunity"}</p>
+            <p className="truncate text-xs text-muted-foreground">{a.opportunity?.orgName}</p>
+            <div className="mt-2.5 flex items-center justify-between gap-2">
+              <span className="flex items-center gap-1.5">
+                <span className={`size-2 rounded-full ${STAGE_DOT[a.stage] ?? "bg-secondary"}`} />
+                <span
+                  className={`text-xs font-extrabold capitalize ${
+                    STAGE_TEXT[a.stage] ?? "text-muted-foreground"
+                  }`}
+                >
+                  {a.stage}
+                </span>
+              </span>
+              {a.status === "accepted" && a.conversationId && (
+                <button
+                  className="text-xs font-bold text-primary hover:underline"
+                  onClick={() => navigate(`/messages?c=${a.conversationId}`)}
+                >
+                  Open chat →
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </ClayCard>
   );
 }
 

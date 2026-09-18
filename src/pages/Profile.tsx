@@ -1,15 +1,21 @@
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import {
+  Award,
+  BadgeCheck,
   Building2,
   Check,
+  ExternalLink,
+  FileUp,
   GraduationCap,
   HeartHandshake,
   MapPin,
+  Plus,
   Save,
+  Trash2,
   UserRound,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { api } from "@/convex/_generated/api";
@@ -29,6 +35,17 @@ import { useAuth } from "@/hooks/use-auth";
 
 export default function Profile() {
   const { user } = useAuth();
+  const certificates = useQuery(api.certificates.listMine, {}) as
+    | Array<{
+        _id: string;
+        title: string;
+        issuer?: string;
+        issuedAt?: number;
+        fileUrl?: string;
+        fileName?: string;
+        verified?: boolean;
+      }>
+    | undefined;
 
   const [accountType, setAccountType] = useState<"volunteer" | "organization">(
     user?.accountType === "organization" ? "organization" : "volunteer",
@@ -307,6 +324,13 @@ export default function Profile() {
         </>
       )}
 
+      {/* Certificates & Verified Achievements (volunteers only) */}
+      {accountType === "volunteer" && (
+        <CertificatesSection
+          certificates={certificates}
+        />
+      )}
+
       <div className="sticky bottom-4 z-20 mt-6">
         <ClayCard className="flex items-center justify-between gap-3 p-3 pl-5">
           <p className="text-sm text-muted-foreground">
@@ -382,7 +406,234 @@ function PillToggle({
           : "bg-secondary/80 text-secondary-foreground hover:bg-secondary"
       }`}
     >
-      {label}
+    {label}
     </button>
+  );
+}
+
+/* ------------------------- Certificates section ------------------------- */
+
+type CertRow = {
+  _id: string;
+  title: string;
+  issuer?: string;
+  issuedAt?: number;
+  fileUrl?: string;
+  fileName?: string;
+  verified?: boolean;
+};
+
+function CertificatesSection({ certificates }: { certificates: CertRow[] | undefined }) {
+  const addCert = useMutation(api.certificates.add);
+  const removeCert = useMutation(api.certificates.remove);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [showForm, setShowForm] = useState(false);
+  const [title, setTitle] = useState("");
+  const [issuer, setIssuer] = useState("");
+  const [issuedAt, setIssuedAt] = useState("");
+  const [file, setFile] = useState<{ url: string; name: string; type: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const handlePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 500 * 1024) {
+      toast.error("File too large — please keep it under 500 KB");
+      e.target.value = "";
+      return;
+    }
+    // Free-tier storage: the file is embedded as a data URL (small files only)
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFile({ url: String(reader.result), name: f.name, type: f.type || "application/octet-stream" });
+    };
+    reader.readAsDataURL(f);
+  };
+
+  const handleAdd = async () => {
+    if (!title.trim()) {
+      toast.error("Give the certificate a title first");
+      return;
+    }
+    setBusy(true);
+    try {
+      await addCert({
+        title,
+        issuer: issuer || undefined,
+        issuedAt: issuedAt ? new Date(issuedAt).getTime() : undefined,
+        fileUrl: file?.url,
+        fileName: file?.name,
+        fileType: file?.type,
+      });
+      toast.success("Certificate added");
+      setTitle("");
+      setIssuer("");
+      setIssuedAt("");
+      setFile(null);
+      setShowForm(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not add certificate");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleRemove = async (id: string) => {
+    try {
+      await removeCert({ id: id as never });
+      toast.success("Certificate removed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not remove certificate");
+    }
+  };
+
+  return (
+    <ClayCard className="mt-5 p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="flex items-center gap-2 font-display text-lg font-bold">
+            <Award className="size-5 text-primary" /> Certificates &amp; Verified Achievements
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Upload digital certificates from completed programs — they showcase your experience to organizations.
+          </p>
+        </div>
+        {!showForm && (
+          <ClayButton size="sm" onClick={() => setShowForm(true)}>
+            <Plus /> Add certificate
+          </ClayButton>
+        )}
+      </div>
+
+      {/* Add form */}
+      {showForm && (
+        <div className="clay-shadow-inset mt-4 rounded-3xl bg-secondary/50 p-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Title *
+              </label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Community Health Outreach — Certificate of Completion"
+                className="clay-input mt-1.5 rounded-2xl border-0 px-4 shadow-none focus-visible:ring-0 dark:bg-transparent"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Issuing organization
+              </label>
+              <Input
+                value={issuer}
+                onChange={(e) => setIssuer(e.target.value)}
+                placeholder="e.g. Ubuzima Health Initiative"
+                className="clay-input mt-1.5 rounded-2xl border-0 px-4 shadow-none focus-visible:ring-0 dark:bg-transparent"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Date awarded
+              </label>
+              <Input
+                type="date"
+                value={issuedAt}
+                onChange={(e) => setIssuedAt(e.target.value)}
+                className="clay-input mt-1.5 rounded-2xl border-0 px-4 shadow-none focus-visible:ring-0 dark:bg-transparent"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                File (image or PDF, max 500 KB)
+              </label>
+              <div className="mt-1.5 flex items-center gap-2">
+                <ClayButton variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+                  <FileUp /> {file ? "Change file" : "Upload file"}
+                </ClayButton>
+                {file && <span className="truncate text-xs font-semibold text-muted-foreground">{file.name}</span>}
+                <input ref={fileRef} type="file" accept="image/*,application/pdf" hidden onChange={handlePick} />
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <ClayButton size="sm" onClick={handleAdd} disabled={busy}>
+              {busy ? "Saving…" : "Save certificate"}
+            </ClayButton>
+            <ClayButton size="sm" variant="outline" onClick={() => setShowForm(false)}>
+              Cancel
+            </ClayButton>
+          </div>
+        </div>
+      )}
+
+      {/* List */}
+      {certificates === undefined ? (
+        <div className="mt-4 space-y-3">
+          {[0, 1].map((i) => (
+            <div key={i} className="h-16 animate-pulse rounded-3xl bg-secondary/60" />
+          ))}
+        </div>
+      ) : certificates.length === 0 ? (
+        !showForm && (
+          <p className="mt-4 rounded-2xl bg-secondary/50 px-4 py-6 text-center text-sm text-muted-foreground">
+            No certificates yet. Complete a volunteer program, then add it here —
+            organizations love seeing verified experience.
+          </p>
+        )
+      ) : (
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {certificates.map((cert) => (
+            <div
+              key={cert._id}
+              className="clay-press flex items-start gap-3 rounded-3xl border border-border bg-card p-4"
+            >
+              {cert.fileUrl && cert.fileUrl.startsWith("data:image") ? (
+                <img
+                  src={cert.fileUrl}
+                  alt={cert.title}
+                  className="size-14 shrink-0 rounded-2xl object-cover"
+                />
+              ) : (
+                <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-mint">
+                  <Award className="size-6 text-teal-800" />
+                </span>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center gap-1.5 truncate font-display text-sm font-bold">
+                  {cert.title}
+                  {cert.verified && (
+                    <BadgeCheck className="size-4 shrink-0 text-teal-700" aria-label="Verified" />
+                  )}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {cert.issuer ?? "Issuer not set"}
+                  {cert.issuedAt ? ` · ${new Date(cert.issuedAt).toLocaleDateString()}` : ""}
+                </p>
+                <div className="mt-1.5 flex items-center gap-3">
+                  {cert.fileUrl && (
+                    <a
+                      href={cert.fileUrl}
+                      download={cert.fileName ?? cert.title}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+                    >
+                      <ExternalLink className="size-3" /> View file
+                    </a>
+                  )}
+                  <button
+                    className="flex items-center gap-1 text-xs font-bold text-destructive hover:underline"
+                    onClick={() => handleRemove(cert._id)}
+                  >
+                    <Trash2 className="size-3" /> Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </ClayCard>
   );
 }

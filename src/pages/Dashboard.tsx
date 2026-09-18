@@ -42,6 +42,7 @@ type Opp = {
   type: string;
   deadline: number | null;
   score: number;
+  matchPercent: number;
   matchReasons: string[];
 };
 
@@ -359,7 +360,12 @@ function RecommendationCard({ opp }: { opp: Opp }) {
           <MapPin className="size-3" /> {opp.district}
         </ClayChip>
       </div>
-      <h3 className="mt-3 font-display text-lg leading-snug font-bold">{opp.title}</h3>
+      <div className="mt-3 flex items-start justify-between gap-2">
+        <h3 className="font-display text-lg leading-snug font-bold">{opp.title}</h3>
+        <span className="clay-chip shrink-0 bg-primary px-2.5 py-1 text-[11px] font-extrabold text-primary-foreground">
+          {opp.matchPercent}% Match
+        </span>
+      </div>
       <p className="mt-0.5 text-xs font-semibold text-muted-foreground">{opp.orgName}</p>
       {opp.matchReasons.length > 0 && (
         <div className="clay-shadow-inset mt-3 rounded-2xl bg-secondary/60 p-3">
