@@ -19,6 +19,7 @@ const OnboardingGuard = lazy(() =>
 );
 const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
 const Opportunities = lazy(() => import("./pages/Opportunities.tsx"));
+const OpportunityDetail = lazy(() => import("./pages/OpportunityDetail.tsx"));
 const Profile = lazy(() => import("./pages/Profile.tsx"));
 const Messages = lazy(() => import("./pages/Messages.tsx"));
 const OrgMessages = lazy(() => import("./pages/org/OrgMessages.tsx"));
@@ -159,6 +160,14 @@ createRoot(document.getElementById("root")!).render(
                 element={
                   <RequireAuth>
                     <Opportunities />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/opportunities/:id"
+                element={
+                  <RequireAuth>
+                    <OpportunityDetail />
                   </RequireAuth>
                 }
               />

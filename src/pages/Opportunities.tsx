@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Link } from "react-router";
 import { toast } from "sonner";
 
 import { api } from "@/convex/_generated/api";
@@ -230,7 +231,14 @@ export default function Opportunities() {
                       </button>
                     </div>
                   </div>
-                  <h3 className="mt-3 font-display text-lg leading-snug font-bold">{opp.title}</h3>
+                  <h3 className="mt-3 font-display text-lg leading-snug font-bold">
+                    <Link
+                      to={`/opportunities/${opp._id}`}
+                      className="transition-colors hover:text-primary"
+                    >
+                      {opp.title}
+                    </Link>
+                  </h3>
                   <p className="mt-0.5 text-xs font-semibold text-muted-foreground">{opp.orgName}</p>
                   <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-muted-foreground">
                     {opp.description}

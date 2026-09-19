@@ -382,7 +382,7 @@ function RecommendationCard({ opp }: { opp: Opp }) {
         <span className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
           <Users className="size-3.5" /> {opp.slots - opp.slotsFilled} left · {opp.commitment}
         </span>
-        <ClayButton size="sm" onClick={() => navigate("/opportunities")}>
+        <ClayButton size="sm" onClick={() => navigate(`/opportunities/${opp._id}`)}>
           View <ArrowRight />
         </ClayButton>
       </div>
