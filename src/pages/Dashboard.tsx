@@ -27,6 +27,7 @@ import {
   StageChip,
 } from "@/components/clay";
 import { useAuth } from "@/hooks/use-auth";
+import { EXISTING_USER_CUTOFF } from "@/lib/constants";
 
 type Opp = {
   _id: string;
@@ -110,7 +111,13 @@ export default function Dashboard() {
 
   // volunteers who haven't completed the matching survey are routed there
   // first, so the dashboard never renders with an empty, unpersonalized feed
-  if (user && !user.onboardedAt) return <Navigate to="/onboarding" replace />;
+  if (
+    user &&
+    !user.onboardedAt &&
+    // Existing accounts (pre-survey rollout) skip the survey entirely
+    (user._creationTime ?? 0) > EXISTING_USER_CUTOFF
+  )
+    return <Navigate to="/onboarding" replace />;
 
   return (
     <AppShell>

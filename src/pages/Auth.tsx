@@ -5,6 +5,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import { ClayButton, ClayCard, ClayChip } from "@/components/clay";
+import { EXISTING_USER_CUTOFF } from "@/lib/constants";
 import logo from "@/assets/logo.svg";
 import {
   ArrowLeft,
@@ -56,13 +57,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
    *  submit handler owns routing; the effect below stays out of the way. */
   const pendingRole = useRef<Role | null>(null);
 
+  /** True for accounts created before the survey rollout — they never see it. */
+  const isNewAccount =
+    user === undefined ? false : (user?._creationTime ?? 0) > EXISTING_USER_CUTOFF;
+
   /**
    * Single source of truth for post-auth routing. Runs whenever auth state or
    * the user document changes — including right after email OTP / guest sign-in
    * — so new and returning users both land in the right experience:
-   *   organization            → /org (org console + org navigation)
-   *   volunteer, not onboarded → /onboarding (matching survey)
-   *   volunteer, onboarded     → returnTo or /dashboard
+   *   organization             → /org (org console + org navigation)
+   *   volunteer, existing acct → returnTo or /dashboard (survey never shown)
+   *   volunteer, brand-new     → /onboarding once (matching survey)
    */
   useEffect(() => {
     if (authLoading || !isAuthenticated) return;
@@ -72,7 +77,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     if (user?.accountType === "organization") {
       navigate("/org", { replace: true });
     } else if (user?.accountType === "volunteer") {
-      if (user?.onboardedAt) {
+      if (user.onboardedAt || !isNewAccount) {
         navigate(redirect, { replace: true });
       } else {
         navigate(
@@ -83,16 +88,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         );
       }
     } else {
-      // No role stored yet — route straight into the volunteer survey, which
-      // collects everything needed for matching (works for guests too).
-      navigate(
-        returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
-          ? `/onboarding?returnTo=${encodeURIComponent(returnTo)}`
-          : "/onboarding",
-        { replace: true },
-      );
+      // No role stored yet — guests route into the volunteer experience.
+      navigate(redirect, { replace: true });
     }
-  }, [authLoading, isAuthenticated, user, navigate, redirect, returnTo]);
+  }, [authLoading, isAuthenticated, user, navigate, redirect, returnTo, isNewAccount]);
 
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -114,7 +113,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
-  /** Where each role lands immediately after sign-up. */
+  /** Where each role lands immediately after sign-up. Only brand-new
+   *  volunteer accounts are routed into the matching survey. */
   const destinationForRole = (r: Role) => {
     if (r === "organization") return "/org";
     return returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
@@ -126,15 +126,24 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     const effective: Role = role ?? "volunteer";
     pendingRole.current = effective;
     try {
-      await setInitialRole({ accountType: effective });
-      navigate(destinationForRole(effective), { replace: true });
+      const { isNew } = await setInitialRole({ accountType: effective });
+      if (effective === "organization") {
+        navigate("/org", { replace: true });
+        return;
+      }
+      // Volunteers: returning accounts go straight to their destination;
+      // only accounts created by this very sign-in see the matching survey.
+      navigate(isNew ? destinationForRole("volunteer") : redirect, {
+        replace: true,
+      });
     } catch {
       // Existing accounts keep their stored role — route by that instead.
       pendingRole.current = null;
       if (user?.accountType === "organization") {
         navigate("/org", { replace: true });
       } else if (user?.accountType === "volunteer") {
-        navigate(user.onboardedAt ? redirect : destinationForRole("volunteer"), {
+        const isReturning = user.onboardedAt || !isNewAccount;
+        navigate(isReturning ? redirect : destinationForRole("volunteer"), {
           replace: true,
         });
       } else {

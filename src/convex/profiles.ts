@@ -8,20 +8,29 @@ import { getCurrentUser } from "./users";
  * Set the caller's role (account type). Called right after sign-up/sign-in
  * from the auth page so routing can trust `accountType` immediately.
  * Idempotent; role can only be changed while it is unset.
+ *
+ * Returns whether the signed-in account is brand-new (created by this very
+ * sign-in). The auth page uses this to decide if a volunteer should see the
+ * matching survey: only new volunteers are onboarded, returning ones go
+ * straight to their dashboard.
  */
 export const setInitialRole = mutation({
   args: { accountType: v.union(v.literal("volunteer"), v.literal("organization")) },
   handler: async (ctx, { accountType }) => {
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Not signed in");
+    // "New" means created by this very sign-in AND never onboarded — so a
+    // volunteer who already finished or skipped the survey is never sent back.
+    const isNew =
+      user._creationTime > Date.now() - 60_000 && !user.onboardedAt;
     if (user.accountType && user.accountType !== accountType) {
       throw new Error(
         "This account already has a role. Manage it from your profile page.",
       );
     }
-    if (user.accountType === accountType) return user._id;
+    if (user.accountType === accountType) return { userId: user._id, isNew };
     await ctx.db.patch(user._id, { accountType });
-    return user._id;
+    return { userId: user._id, isNew };
   },
 });
 
