@@ -5,9 +5,14 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import { ClayButton, ClayCard, ClayChip } from "@/components/clay";
-import { EXISTING_USER_CUTOFF } from "@/lib/constants";
+import { GoogleIcon } from "@/components/GoogleIcon";
+import {
+  EXISTING_USER_CUTOFF,
+  GOOGLE_ROLE_STORAGE_KEY,
+} from "@/lib/constants";
 import logo from "@/assets/logo.svg";
 import {
+  AlertCircle,
   ArrowLeft,
   ArrowRight,
   Building2,
@@ -51,7 +56,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   );
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    searchParams.get("error"),
+  );
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   /** While a just-chosen role is being persisted, the explicit navigate in the
    *  submit handler owns routing; the effect below stays out of the way. */
@@ -166,6 +174,38 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       setError("The verification code you entered is incorrect.");
       setOtp("");
       setIsLoading(false);
+    }
+  };
+
+  /**
+   * Google OAuth: persists the picked role so it survives the redirect to
+   * Google and back, then hands off to Convex Auth's OAuth flow. On success
+   * the browser lands back on /auth with a ?code= param, which the auth
+   * provider exchanges automatically — the routing effect above then sends
+   * the user to their role's destination.
+   */
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    setError(null);
+    const effective: Role = role ?? "volunteer";
+    try {
+      sessionStorage.setItem(GOOGLE_ROLE_STORAGE_KEY, effective);
+    } catch {
+      // Private browsing — role will be picked from the URL param instead.
+    }
+    try {
+      const callbackPath = returnTo
+        ? `/auth/callback?returnTo=${encodeURIComponent(returnTo)}`
+        : `/auth/callback`;
+      await signIn("google", { redirectTo: callbackPath });
+      // Browser is navigating away to Google; keep the spinner visible.
+    } catch (e) {
+      setGoogleLoading(false);
+      setError(
+        e instanceof Error
+          ? `Google sign-in failed: ${e.message}`
+          : "Could not start Google sign-in. Please try again.",
+      );
     }
   };
 
@@ -318,7 +358,34 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   </p>
                 </div>
                 <form onSubmit={handleEmailSubmit} className="mt-7">
-                  <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  {/** Google first — the fastest path in. */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleGoogleSignIn}
+                    disabled={isLoading || googleLoading}
+                    className="w-full rounded-2xl border-2 border-border bg-card font-display text-[15px] font-bold text-foreground shadow-xs hover:bg-secondary/60"
+                  >
+                    {googleLoading ? (
+                      <>
+                        <Loader2 className="animate-spin" /> Redirecting to Google…
+                      </>
+                    ) : (
+                      <>
+                        <GoogleIcon /> Continue with Google
+                      </>
+                    )}
+                  </Button>
+
+                  <div className="mt-6 flex items-center gap-3">
+                    <span className="h-0.5 flex-1 rounded-full bg-border" />
+                    <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      or
+                    </span>
+                    <span className="h-0.5 flex-1 rounded-full bg-border" />
+                  </div>
+
+                  <label className="mt-6 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Email address
                   </label>
                   <div className="clay-input mt-1.5 flex items-center gap-2 rounded-2xl px-4">
