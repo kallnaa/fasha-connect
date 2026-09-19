@@ -60,9 +60,9 @@ export default function Landing() {
     <div className="relative min-h-screen overflow-x-clip">
       {/* soft teal / rose atmosphere */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="clay-blob absolute -top-32 -left-32 size-[34rem] bg-teal-200/50" />
-        <div className="clay-blob absolute top-24 -right-40 size-[30rem] bg-rose-200/50" />
-        <div className="clay-blob absolute top-[55%] left-1/4 size-96 bg-sky-200/40" />
+        <div className="clay-blob absolute -top-32 -left-32 size-[34rem] bg-teal-200/50 dark:bg-teal-500/10" />
+        <div className="clay-blob absolute top-24 -right-40 size-[30rem] bg-rose-200/50 dark:bg-rose-500/10" />
+        <div className="clay-blob absolute top-[55%] left-1/4 size-96 bg-sky-200/40 dark:bg-sky-500/10" />
       </div>
 
       <div className="relative z-10">
@@ -140,7 +140,7 @@ export default function Landing() {
                   asChild
                   variant="outline"
                   size="lg"
-                  className="border-2 border-[#0f172a]/80 bg-white px-7 text-base text-[#0f172a] shadow-none hover:bg-secondary"
+                  className="border-2 border-[#0f172a]/80 bg-white px-7 text-base text-[#0f172a] shadow-none hover:bg-secondary dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
                 >
                   <Link to="/auth?role=organization">
                     <Building2 /> Register as Organization
@@ -287,7 +287,7 @@ export default function Landing() {
               <p className="mt-2 max-w-xl text-muted-foreground">
                 A taste of what organizations across Rwanda are posting this week.
               </p>
-            </div>              <ClayButton asChild variant="outline" className="border-2 border-[#0f172a]/80 bg-white text-[#0f172a] shadow-none hover:bg-secondary">
+            </div>              <ClayButton asChild variant="outline" className="border-2 border-[#0f172a]/80 bg-white text-[#0f172a] shadow-none hover:bg-secondary dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10">
               <Link to={isAuthenticated ? "/opportunities" : "/auth?role=volunteer"}>
                 Browse all <Search />
               </Link>

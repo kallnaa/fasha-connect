@@ -118,8 +118,8 @@ export default function Onboarding() {
     <div className="relative flex min-h-screen flex-col overflow-hidden">
       {/* soft teal/rose atmosphere */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="clay-blob absolute -top-32 -left-32 size-[30rem] bg-teal-200/50" />
-        <div className="clay-blob absolute -right-32 bottom-0 size-[26rem] bg-rose-200/50" />
+        <div className="clay-blob absolute -top-32 -left-32 size-[30rem] bg-teal-200/50 dark:bg-teal-500/10" />
+        <div className="clay-blob absolute -right-32 bottom-0 size-[26rem] bg-rose-200/50 dark:bg-rose-500/10" />
       </div>
 
       <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-8">

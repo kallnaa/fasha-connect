@@ -112,11 +112,59 @@
   --border: #24324d;
   --input: #24324d;
   --ring: #14b8a6;
-  --peach: #4c2029;
-  --mint: #123f38;
-  --sky: #14314d;
-  --butter: #453a11;
-  --lilac: #2e2a52;
+  --peach: #3d1a22;
+  --mint: #0f3630;
+  --sky: #142c45;
+  --butter: #38310f;
+  --lilac: #272344;
+}
+
+/* Dark-mode readability fixes: soft pastel tints are unreadable on dark
+   backgrounds, so the paired 700–900 text tones flip to light tones and
+   white-tinted surfaces go translucent dark. Scoped to .dark only. */
+.dark .text-teal-800 { color: var(--color-teal-200); }
+.dark .text-teal-700 { color: var(--color-teal-300); }
+.dark .text-teal-900 { color: var(--color-teal-100); }
+.dark .text-teal-900\/80 { color: color-mix(in oklab, var(--color-teal-100) 80%, transparent); }
+.dark .text-yellow-700 { color: var(--color-amber-200); }
+.dark .text-yellow-800 { color: var(--color-amber-200); }
+.dark .text-rose-700 { color: var(--color-rose-300); }
+.dark .text-rose-800 { color: var(--color-rose-200); }
+.dark .text-rose-800\/80 { color: color-mix(in oklab, var(--color-rose-200) 80%, transparent); }
+.dark .text-sky-800 { color: var(--color-sky-200); }
+.dark .text-sky-900 { color: var(--color-sky-100); }
+.dark .text-violet-800 { color: var(--color-violet-200); }
+.dark .bg-teal-50 { background-color: color-mix(in oklab, var(--color-teal-500) 14%, transparent); }
+.dark .bg-rose-50 { background-color: color-mix(in oklab, var(--color-rose-500) 14%, transparent); }
+.dark .bg-butter { background-color: var(--butter); }
+.dark .bg-mint { background-color: var(--mint); }
+.dark .bg-sky { background-color: var(--sky); }
+.dark .bg-peach { background-color: var(--peach); }
+.dark .bg-lilac { background-color: var(--lilac); }
+/* alpha variants of the named tints (escaped class names: bg-mint\/50 …) */
+.dark .bg-mint\/40, .dark .bg-mint\/50, .dark .bg-mint\/60, .dark .bg-mint\/70 { background-color: color-mix(in oklab, var(--mint) 70%, transparent); }
+.dark .bg-sky\/60 { background-color: color-mix(in oklab, var(--sky) 80%, transparent); }
+.dark .bg-butter\/30 { background-color: color-mix(in oklab, var(--butter) 60%, transparent); }
+.dark .bg-butter\/40 { background-color: color-mix(in oklab, var(--butter) 60%, transparent); }
+.dark .bg-peach\/40, .dark .bg-peach\/50 { background-color: color-mix(in oklab, var(--peach) 70%, transparent); }
+.dark .bg-lilac\/50 { background-color: color-mix(in oklab, var(--lilac) 70%, transparent); }
+.dark .bg-secondary\/60, .dark .bg-secondary\/70, .dark .bg-secondary\/80 { background-color: color-mix(in oklab, var(--secondary) 70%, transparent); }
+.dark .bg-card\/60, .dark .bg-card\/70, .dark .bg-card\/80 { background-color: color-mix(in oklab, var(--card) 80%, transparent); }
+.dark .bg-teal-100\/60 { background-color: rgba(20, 184, 166, 0.12); }
+.dark .bg-rose-100\/60 { background-color: rgba(244, 63, 94, 0.1); }
+
+/* Smooth theme transitions — colors ease over ~200ms instead of flashing.
+   Disabled while the app first boots so the initial paint isn't animated. */
+body.theme-transitioning *,
+body.theme-transitioning *::before,
+body.theme-transitioning *::after {
+  transition: background-color 200ms ease, border-color 200ms ease,
+    color 200ms ease, fill 200ms ease, stroke 200ms ease !important;
+}
+body.theme-transitioning .clay-press,
+body.theme-transitioning button.clay-button,
+body.theme-transitioning a.clay-button {
+  transition-property: transform, box-shadow, border-color, background-color, color;
 }
 
 /* ---------- Elevation & surface primitives (names preserved) ---------- */

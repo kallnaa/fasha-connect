@@ -115,5 +115,5 @@ export const STAGE_LABELS: Record<string, string> = {
 /** Accounts created before this rollout are considered existing users. */
 export const EXISTING_USER_CUTOFF = 1789811810137; // deploy time — accounts created after this are new
 
-/** sessionStorage key carrying the picked role across a Google OAuth redirect. */
-export const GOOGLE_ROLE_STORAGE_KEY = "fasha.googleRole";
+/** localStorage key for the theme preference (light | dark | system). */
+export const THEME_STORAGE_KEY = "fasha.theme";

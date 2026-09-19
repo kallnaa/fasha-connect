@@ -1,5 +1,6 @@
 import '@vly-ai/integrations';
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { RequireAuth } from "@/components/RequireAuth";
 import { RequireOrg } from "@/components/RequireOrg";
 import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
@@ -13,7 +14,6 @@ import "./index.css";
 // Lazy load route components for better code splitting
 const Landing = lazy(() => import("./pages/Landing.tsx"));
 const AuthPage = lazy(() => import("./pages/Auth.tsx"));
-const AuthCallback = lazy(() => import("./pages/AuthCallback.tsx"));
 const Onboarding = lazy(() => import("./pages/Onboarding.tsx"));
 const OnboardingGuard = lazy(() =>
   import("./pages/Onboarding.tsx").then((m) => ({ default: m.OnboardingGuard })),
@@ -130,17 +130,17 @@ createRoot(document.getElementById("root")!).render(
       <ToolbarErrorBoundary>
         <VlyToolbar />
       </ToolbarErrorBoundary>
-      <ConvexAuthProvider client={convex}>
-        <BrowserRouter>
-          <RouteSyncer />
-          <Suspense fallback={<RouteLoading />}>
-            <Routes>
+      <ThemeProvider>
+        <ConvexAuthProvider client={convex}>
+          <BrowserRouter>
+            <RouteSyncer />
+            <Suspense fallback={<RouteLoading />}>
+              <Routes>
               <Route path="/" element={<Landing />} />
               <Route
                 path="/auth"
                 element={<AuthPage redirectAfterAuth="/dashboard" />}
               />
-              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route
                 path="/onboarding"
                 element={
@@ -265,6 +265,7 @@ createRoot(document.getElementById("root")!).render(
         </BrowserRouter>
         <Toaster />
       </ConvexAuthProvider>
+      </ThemeProvider>
     </RootErrorBoundary>
   </StrictMode>,
 );

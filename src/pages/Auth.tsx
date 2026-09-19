@@ -1,15 +1,12 @@
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/convex/_generated/api";
 import { ClayButton, ClayCard, ClayChip } from "@/components/clay";
-import { GoogleIcon } from "@/components/GoogleIcon";
-import {
-  EXISTING_USER_CUTOFF,
-  GOOGLE_ROLE_STORAGE_KEY,
-} from "@/lib/constants";
+import { ThemeToggle } from "@/components/ThemeProvider";
+import { EXISTING_USER_CUTOFF } from "@/lib/constants";
 import logo from "@/assets/logo.svg";
 import {
   AlertCircle,
@@ -45,7 +42,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const returnTo = searchParams.get("returnTo");
   const redirect = resolveRedirectAfterAuth(returnTo, redirectAfterAuth);
   const setInitialRole = useSetInitialRoleMutation();
-  const authConfig = useQuery(api.meta.authConfig, {});
 
   // Role can arrive preselected from landing CTAs (?role=organization)
   const roleParam = searchParams.get("role");
@@ -58,7 +54,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [error, setError] = useState<string | null>(
     searchParams.get("error"),
   );
-  const [googleLoading, setGoogleLoading] = useState(false);
 
   /** While a just-chosen role is being persisted, the explicit navigate in the
    *  submit handler owns routing; the effect below stays out of the way. */
@@ -176,37 +171,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
-  /**
-   * Google OAuth: persists the picked role so it survives the redirect to
-   * Google and back, then hands off to Convex Auth's OAuth flow. On success
-   * the browser lands back on /auth/callback which exchanges the code and
-   * routes the user to their role's destination.
-   */
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    setError(null);
-    const effective: Role = role ?? "volunteer";
-    try {
-      sessionStorage.setItem(GOOGLE_ROLE_STORAGE_KEY, effective);
-    } catch {
-      // Private browsing — role will be picked from the URL param instead.
-    }
-    try {
-      const callbackPath = returnTo
-        ? `/auth/callback?returnTo=${encodeURIComponent(returnTo)}`
-        : `/auth/callback`;
-      await signIn("google", { redirectTo: callbackPath });
-      // Browser is navigating away to Google; keep the spinner visible.
-    } catch (e) {
-      setGoogleLoading(false);
-      setError(
-        e instanceof Error
-          ? `Google sign-in failed: ${e.message}`
-          : "Could not start Google sign-in. Please try again.",
-      );
-    }
-  };
-
   const handleGuestLogin = async () => {
     setIsLoading(true);
     setError(null);
@@ -228,8 +192,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden">
       <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="clay-blob absolute -top-32 -left-32 size-[28rem] bg-teal-200/50" />
-        <div className="clay-blob absolute -bottom-32 -right-32 size-[28rem] bg-rose-200/50" />
+        <div className="clay-blob absolute -top-32 -left-32 size-[28rem] bg-teal-200/50 dark:bg-teal-500/10" />
+        <div className="clay-blob absolute -bottom-32 -right-32 size-[28rem] bg-rose-200/50 dark:bg-rose-500/10" />
+      </div>
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
       </div>
 
       <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-10">
@@ -300,39 +267,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     : "Volunteers get a 1-minute setup to personalize their matches."}
                 </p>
 
-                <form onSubmit={handleEmailSubmit} className="mt-5">
-                  {/** Google first — the fastest path in (shown once OAuth is configured). */}
-                  {authConfig?.googleEnabled && (
-                    <>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleGoogleSignIn}
-                        disabled={isLoading || googleLoading}
-                        className="w-full rounded-2xl border-2 border-border bg-card font-display text-[15px] font-bold text-foreground shadow-xs hover:bg-secondary/60"
-                      >
-                        {googleLoading ? (
-                          <>
-                            <Loader2 className="animate-spin" /> Redirecting to Google…
-                          </>
-                        ) : (
-                          <>
-                            <GoogleIcon /> Continue with Google
-                          </>
-                        )}
-                      </Button>
-
-                      <div className="mt-5 flex items-center gap-3">
-                        <span className="h-0.5 flex-1 rounded-full bg-border" />
-                        <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                          or
-                        </span>
-                        <span className="h-0.5 flex-1 rounded-full bg-border" />
-                      </div>
-                    </>
-                  )}
-
-                  <label className="mt-5 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                <form onSubmit={handleEmailSubmit} className="mt-6">
+                  <label className="mt-0 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Email address
                   </label>
                   <div className="clay-input mt-1.5 flex items-center gap-2 rounded-2xl px-4">

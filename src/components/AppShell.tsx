@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeProvider";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { api } from "@/convex/_generated/api";
@@ -134,6 +135,9 @@ export function AppShell({
           </nav>
 
           <div className="flex items-center gap-2">
+            {/* Theme toggle (light / dark / follows system) */}
+            <ThemeToggle />
+
             {/* Messages */}
             <Link
               to={isOrg ? "/org/messages" : "/messages"}
