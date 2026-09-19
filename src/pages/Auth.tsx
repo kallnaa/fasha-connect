@@ -1,4 +1,4 @@
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -45,15 +45,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const returnTo = searchParams.get("returnTo");
   const redirect = resolveRedirectAfterAuth(returnTo, redirectAfterAuth);
   const setInitialRole = useSetInitialRoleMutation();
+  const authConfig = useQuery(api.meta.authConfig, {});
 
   // Role can arrive preselected from landing CTAs (?role=organization)
   const roleParam = searchParams.get("role");
   const [role, setRole] = useState<Role | null>(
     roleParam === "organization" || roleParam === "volunteer" ? roleParam : null,
   );
-  const [step, setStep] = useState<"role" | "signIn" | { email: string }>(
-    roleParam === "organization" || roleParam === "volunteer" ? "signIn" : "role",
-  );
+  const [step, setStep] = useState<"signIn" | { email: string }>("signIn");
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(
@@ -180,9 +179,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   /**
    * Google OAuth: persists the picked role so it survives the redirect to
    * Google and back, then hands off to Convex Auth's OAuth flow. On success
-   * the browser lands back on /auth with a ?code= param, which the auth
-   * provider exchanges automatically — the routing effect above then sends
-   * the user to their role's destination.
+   * the browser lands back on /auth/callback which exchanges the code and
+   * routes the user to their role's destination.
    */
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
@@ -225,11 +223,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
-  const changeRole = (r: Role) => {
-    setRole(r);
-    setStep("signIn");
-    setError(null);
-  };
+  const isOrg = role === "organization";
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden">
@@ -248,144 +242,97 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           </div>
 
           <ClayCard className="p-8">
-            {step === "role" ? (
+            {step === "signIn" ? (
               <>
                 <div className="text-center">
                   <ClayChip className="bg-teal-50 px-4 py-1.5 text-sm font-bold text-teal-800">
                     🇷🇼 Karibu! Welcome
                   </ClayChip>
-                  <h1 className="mt-4 font-display text-2xl font-extrabold tracking-tight">
-                    How will you use Fasha?
-                  </h1>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    Pick your account type — we'll set up the right experience
-                    for you from the start.
-                  </p>
-                </div>
-
-                <div className="mt-7 grid gap-3">
-                  <button
-                    onClick={() => changeRole("volunteer")}
-                    className="clay-press group rounded-3xl border-2 border-border bg-card p-5 text-left transition-colors hover:border-primary/50"
-                  >
-                    <div className="flex items-center gap-4">
-                      <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-teal-50">
-                        <HeartHandshake className="size-6 text-primary" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-display text-lg font-extrabold">I'm a Volunteer</p>
-                        <p className="text-sm text-muted-foreground">
-                          Find opportunities and get matched with programs near me.
-                        </p>
-                      </div>
-                      <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => changeRole("organization")}
-                    className="clay-press group rounded-3xl border-2 border-border bg-card p-5 text-left transition-colors hover:border-primary/50"
-                  >
-                    <div className="flex items-center gap-4">
-                      <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-rose-50">
-                        <Building2 className="size-6 text-rose-600" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-display text-lg font-extrabold">
-                          We're an Organization
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Post opportunities and manage volunteer applicants.
-                        </p>
-                      </div>
-                      <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                    </div>
-                  </button>
-                </div>
-
-                <div className="mt-6 flex items-center gap-3">
-                  <span className="h-0.5 flex-1 rounded-full bg-border" />
-                  <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                    or
-                  </span>
-                  <span className="h-0.5 flex-1 rounded-full bg-border" />
-                </div>
-
-                <Button
-                  type="button"
-                  onClick={handleGuestLogin}
-                  disabled={isLoading}
-                  className="mt-5 w-full rounded-2xl font-bold"
-                  variant="outline"
-                >
-                  <UserX />
-                  Continue as guest
-                </Button>
-              </>
-            ) : step === "signIn" ? (
-              <>
-                <div className="text-center">
-                  <ClayChip className="bg-teal-50 px-4 py-1.5 text-sm font-bold text-teal-800">
-                    🇷🇼 Karibu! Welcome
-                  </ClayChip>
-                  {role && (
-                    <div className="mt-3 flex items-center justify-center gap-2">
-                      <ClayChip className="bg-secondary px-3 py-1 text-xs font-bold">
-                        {role === "organization" ? (
-                          <>
-                            <Building2 className="size-3 text-rose-600" /> Organization account
-                          </>
-                        ) : (
-                          <>
-                            <HeartHandshake className="size-3 text-primary" /> Volunteer account
-                          </>
-                        )}
-                      </ClayChip>
-                      <button
-                        className="text-xs font-bold text-primary hover:underline"
-                        onClick={() => setStep("role")}
-                      >
-                        change
-                      </button>
-                    </div>
-                  )}
                   <h1 className="mt-4 font-display text-2xl font-extrabold tracking-tight">
                     Sign in or create account
                   </h1>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    Enter your email and we'll send a one-time code — no
-                    passwords to remember.
+                    Choose your account type, then sign in — no passwords to
+                    remember.
                   </p>
                 </div>
-                <form onSubmit={handleEmailSubmit} className="mt-7">
-                  {/** Google first — the fastest path in. */}
-                  <Button
+
+                {/* Role is stated right here — no separate step afterwards. */}
+                <div className="mt-6 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Account type">
+                  <button
                     type="button"
-                    variant="outline"
-                    onClick={handleGoogleSignIn}
-                    disabled={isLoading || googleLoading}
-                    className="w-full rounded-2xl border-2 border-border bg-card font-display text-[15px] font-bold text-foreground shadow-xs hover:bg-secondary/60"
+                    onClick={() => setRole("volunteer")}
+                    aria-pressed={role === "volunteer" || role === null}
+                    className={`clay-press rounded-2xl border-2 p-3 text-left transition-colors ${
+                      !isOrg
+                        ? "border-primary bg-teal-50"
+                        : "border-border bg-card hover:border-primary/40"
+                    }`}
                   >
-                    {googleLoading ? (
-                      <>
-                        <Loader2 className="animate-spin" /> Redirecting to Google…
-                      </>
-                    ) : (
-                      <>
-                        <GoogleIcon /> Continue with Google
-                      </>
-                    )}
-                  </Button>
-
-                  <div className="mt-6 flex items-center gap-3">
-                    <span className="h-0.5 flex-1 rounded-full bg-border" />
-                    <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                      or
+                    <span className="flex items-center gap-2">
+                      <span className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${!isOrg ? "bg-primary/15" : "bg-secondary"}`}>
+                        <HeartHandshake className={`size-4 ${!isOrg ? "text-primary" : "text-muted-foreground"}`} />
+                      </span>
+                      <span className="font-display text-sm font-extrabold">Volunteer</span>
                     </span>
-                    <span className="h-0.5 flex-1 rounded-full bg-border" />
-                  </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRole("organization")}
+                    aria-pressed={isOrg}
+                    className={`clay-press rounded-2xl border-2 p-3 text-left transition-colors ${
+                      isOrg
+                        ? "border-rose-500 bg-rose-50"
+                        : "border-border bg-card hover:border-rose-400/40"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${isOrg ? "bg-rose-500/15" : "bg-secondary"}`}>
+                        <Building2 className={`size-4 ${isOrg ? "text-rose-600" : "text-muted-foreground"}`} />
+                      </span>
+                      <span className="font-display text-sm font-extrabold">Organization</span>
+                    </span>
+                  </button>
+                </div>
+                <p className="mt-2 text-center text-xs text-muted-foreground">
+                  {isOrg
+                    ? "You'll land straight in your organization console."
+                    : "Volunteers get a 1-minute setup to personalize their matches."}
+                </p>
 
-                  <label className="mt-6 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                <form onSubmit={handleEmailSubmit} className="mt-5">
+                  {/** Google first — the fastest path in (shown once OAuth is configured). */}
+                  {authConfig?.googleEnabled && (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleGoogleSignIn}
+                        disabled={isLoading || googleLoading}
+                        className="w-full rounded-2xl border-2 border-border bg-card font-display text-[15px] font-bold text-foreground shadow-xs hover:bg-secondary/60"
+                      >
+                        {googleLoading ? (
+                          <>
+                            <Loader2 className="animate-spin" /> Redirecting to Google…
+                          </>
+                        ) : (
+                          <>
+                            <GoogleIcon /> Continue with Google
+                          </>
+                        )}
+                      </Button>
+
+                      <div className="mt-5 flex items-center gap-3">
+                        <span className="h-0.5 flex-1 rounded-full bg-border" />
+                        <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                          or
+                        </span>
+                        <span className="h-0.5 flex-1 rounded-full bg-border" />
+                      </div>
+                    </>
+                  )}
+
+                  <label className="mt-5 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Email address
                   </label>
                   <div className="clay-input mt-1.5 flex items-center gap-2 rounded-2xl px-4">
@@ -431,11 +378,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   <UserX />
                   Continue as guest
                 </Button>
-                <p className="mt-4 text-center text-xs leading-relaxed text-muted-foreground">
-                  {role === "organization"
-                    ? "You'll land straight in your organization console."
-                    : "Volunteers get a 1-minute setup to personalize their matches."}
-                </p>
               </>
             ) : (
               <>

@@ -1,19 +1,22 @@
 import { useMutation, useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Award,
   BadgeCheck,
   ChevronDown,
+  Clock,
   Eye,
+  GraduationCap,
+  MapPin,
   MessageCircleQuestion,
   MessagesSquare,
   Pencil,
   Pause,
+  Phone,
   Play,
   Plus,
   Send,
   Sparkles,
-  ToggleLeft,
-  ToggleRight,
   Users,
   X,
 } from "lucide-react";
@@ -35,6 +38,13 @@ import {
 } from "@/components/clay";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Opp = {
   _id: string;
@@ -79,11 +89,16 @@ type Applicant = {
     name: string | null;
     district: string | null;
     skills: string[];
+    interests: string[];
     availability: string | null;
     age: number | null;
     education: string | null;
+    school: string | null;
+    track: string | null;
+    phone: string | null;
     experience: string | null;
     bio: string | null;
+    image: string | null;
   } | null;
 };
 
@@ -309,8 +324,9 @@ function ApplicantCard({ applicant: a }: { applicant: Applicant }) {
   const [showComplete, setShowComplete] = useState(false);
   const [hours, setHours] = useState("20");
   const [requestText, setRequestText] = useState("");
-  const [expanded, setExpanded] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
+  const v = a.volunteer;
   const setStage = useMutation(api.applications.setStage);
   const requestInfo = useMutation(api.applications.requestInfo);
   const markCompleted = useMutation(api.certificates.markCompleted);
@@ -360,7 +376,6 @@ function ApplicantCard({ applicant: a }: { applicant: Applicant }) {
     }
   };
 
-  const v = a.volunteer;
   const nextStages =
     a.stage === "new"
       ? ["reviewing", "shortlisted", "rejected"]
@@ -385,63 +400,15 @@ function ApplicantCard({ applicant: a }: { applicant: Applicant }) {
             {v?.district ?? "Rwanda"} · {v?.age ? `${v.age} yrs · ` : ""}
             {v?.availability ?? "Flexible"} · applied {timeAgo(a.createdAt)}
           </p>
-          {v?.bio && !expanded && (
+          {v?.bio && (
             <p className="mt-1.5 line-clamp-1 text-sm text-muted-foreground">{v.bio}</p>
           )}
-          {expanded && (
-            <div className="mt-2 space-y-2">
-              {v?.bio && <p className="text-sm leading-relaxed text-foreground/80">{v.bio}</p>}
-              <div className="flex flex-wrap gap-1.5">
-                {v?.education && <ClayChip className="bg-card/80">🎓 {v.education}</ClayChip>}
-                {v?.experience && <ClayChip className="bg-card/80">💼 {v.experience}</ClayChip>}
-                {v?.skills?.map((s) => <ClayChip key={s} className="bg-mint/50 text-xs">{s}</ClayChip>)}
-              </div>
-              {(a.criteriaMet.length > 0 || a.criteriaMissed.length > 0) && (
-                <div className="rounded-xl bg-card/70 p-3">
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                    Eligibility check
-                  </p>
-                  {a.criteriaMet.map((m) => (
-                    <p key={m} className="mt-1 text-xs font-semibold text-teal-800">✓ {m}</p>
-                  ))}
-                  {a.criteriaMissed.map((m) => (
-                    <p key={m} className="mt-1 text-xs font-semibold text-rose-700">✗ {m}</p>
-                  ))}
-                </div>
-              )}
-              {a.message && (
-                <p className="rounded-xl bg-card/80 px-3 py-2 text-sm italic text-foreground/80">
-                  “{a.message}”
-                </p>
-              )}
-              {a.infoRequest && (
-                <div className="rounded-xl bg-butter/30 px-3 py-2">
-                  <p className="flex items-center gap-1.5 text-xs font-bold text-yellow-700">
-                    <MessageCircleQuestion className="size-3.5" /> You asked: {a.infoRequest}
-                  </p>
-                  {a.infoResponse ? (
-                    <p className="mt-1.5 text-sm"><b>Response:</b> {a.infoResponse}</p>
-                  ) : (
-                    <p className="mt-1 text-xs text-muted-foreground">Awaiting volunteer response…</p>
-                  )}
-                </div>
-              )}
-              <button
-                onClick={() => setExpanded(false)}
-                className="text-xs font-bold text-primary hover:underline"
-              >
-                Show less
-              </button>
-            </div>
-          )}
-          {!expanded && (
-            <button
-              onClick={() => setExpanded(true)}
-              className="mt-1 text-xs font-bold text-primary hover:underline"
-            >
-              View full profile & application
-            </button>
-          )}
+          <button
+            onClick={() => setProfileOpen(true)}
+            className="mt-1 text-xs font-bold text-primary hover:underline"
+          >
+            View full profile
+          </button>
         </div>
 
         <div className="flex flex-col items-end gap-2">
@@ -465,6 +432,9 @@ function ApplicantCard({ applicant: a }: { applicant: Applicant }) {
           <ClayButton size="sm" variant="outline" onClick={() => setShowRequest((v) => !v)}>
             <MessageCircleQuestion className="size-4" />
             {a.infoRequest && !a.infoResponse ? "Re-request info" : "Request info"}
+          </ClayButton>
+          <ClayButton size="sm" variant="outline" onClick={() => setProfileOpen(true)}>
+            <Users className="size-4" /> View profile
           </ClayButton>
           {a.stage === "accepted" && a.conversationId && (
             <ClayButton
@@ -531,6 +501,181 @@ function ApplicantCard({ applicant: a }: { applicant: Applicant }) {
           </div>
         </div>
       )}
+
+      <ApplicantProfileDialog
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+        applicant={a}
+      />
     </div>
+  );
+}
+
+/** Full applicant profile, opened by orgs when reviewing an application. */
+function ApplicantProfileDialog({
+  open,
+  onOpenChange,
+  applicant: a,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  applicant: Applicant;
+}) {
+  const v = a.volunteer;
+  const impact = useQuery(
+    api.certificates.impactStats,
+    v ? { volunteerId: v._id as never } : "skip",
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto rounded-3xl p-0 sm:max-w-xl">
+        {/* Header — identity + match */}
+        <div className="rounded-t-3xl bg-gradient-to-br from-teal-50 to-rose-50 p-6 pb-5">
+          <div className="flex items-start gap-4">
+            <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary/15 font-display text-xl font-extrabold text-primary clay-shadow-sm">
+              {v?.name?.charAt(0).toUpperCase() ?? "V"}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <DialogTitle className="font-display text-lg font-extrabold">
+                  {v?.name ?? "Anonymous volunteer"}
+                </DialogTitle>
+                <StageChip stage={a.stage} />
+              </div>
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs font-semibold text-muted-foreground">
+                <span className="flex items-center gap-1"><MapPin className="size-3.5" /> {v?.district ?? "Rwanda"}</span>
+                {v?.age != null && <span>{v.age} yrs</span>}
+                <span className="flex items-center gap-1"><Clock className="size-3.5" /> {v?.availability ?? "Flexible"}</span>
+              </p>
+            </div>
+            <span className={`clay-chip px-3 py-1 text-xs font-extrabold ${matchScoreColor(a.matchScore)}`}>
+              {a.matchScore}% match
+            </span>
+          </div>
+
+          {/* Verified impact summary */}
+          {impact && (impact.totalHours > 0 || impact.completedPrograms > 0) && (
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <div className="rounded-2xl bg-card/80 p-2.5 text-center">
+                <p className="font-display text-lg font-extrabold text-teal-700">{impact.totalHours}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Verified hrs</p>
+              </div>
+              <div className="rounded-2xl bg-card/80 p-2.5 text-center">
+                <p className="font-display text-lg font-extrabold text-teal-700">{impact.completedPrograms}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Programs</p>
+              </div>
+              <div className="rounded-2xl bg-card/80 p-2.5 text-center">
+                <p className="font-display text-lg font-extrabold text-teal-700">{impact.certificates}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Certificates</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-5 p-6 pt-5">
+          {/* Contact */}
+          {v?.phone && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Contact</p>
+              <a
+                href={`tel:${v.phone}`}
+                className="mt-1.5 inline-flex items-center gap-2 rounded-2xl bg-secondary/70 px-3 py-1.5 text-sm font-bold hover:bg-secondary"
+              >
+                <Phone className="size-4 text-primary" /> {v.phone}
+              </a>
+            </div>
+          )}
+
+          {/* About */}
+          {v?.bio && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">About</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-foreground/80">{v.bio}</p>
+            </div>
+          )}
+
+          {/* Education & experience */}
+          {(v?.education || v?.school || v?.track || v?.experience) && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Education & experience</p>
+              <div className="mt-2 space-y-1.5">
+                {v?.education && (
+                  <p className="flex items-center gap-2 text-sm font-semibold">
+                    <GraduationCap className="size-4 text-primary" /> {v.education}
+                  </p>
+                )}
+                {v?.school && (
+                  <p className="ml-6 text-sm text-muted-foreground">{v.school}{v?.track ? ` · ${v.track}` : ""}</p>
+                )}
+                {v?.experience && (
+                  <p className="flex items-center gap-2 text-sm font-semibold">
+                    <Award className="size-4 text-primary" /> {v.experience} experience
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Skills & interests */}
+          {((v?.skills?.length ?? 0) > 0 || (v?.interests?.length ?? 0) > 0) && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Skills & interests</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {v?.skills?.map((s) => (
+                  <ClayChip key={s} className="bg-mint/60 text-xs text-teal-900">{s}</ClayChip>
+                ))}
+                {v?.interests?.map((i) => (
+                  <ClayChip key={i} className="bg-sky/60 text-xs text-sky-900">{i}</ClayChip>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Application message */}
+          {a.message && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Application message</p>
+              <p className="mt-1.5 rounded-2xl bg-secondary/60 px-4 py-3 text-sm italic leading-relaxed text-foreground/80">
+                “{a.message}”
+              </p>
+            </div>
+          )}
+
+          {/* Eligibility breakdown */}
+          {(a.criteriaMet.length > 0 || a.criteriaMissed.length > 0) && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Eligibility check</p>
+              <div className="mt-2 space-y-1">
+                {a.criteriaMet.map((m) => (
+                  <p key={m} className="text-xs font-semibold text-teal-800">✓ {m}</p>
+                ))}
+                {a.criteriaMissed.map((m) => (
+                  <p key={m} className="text-xs font-semibold text-rose-700">✗ {m}</p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Info request thread */}
+          {a.infoRequest && (
+            <div className="rounded-2xl bg-butter/30 p-4">
+              <p className="flex items-center gap-1.5 text-xs font-bold text-yellow-700">
+                <MessageCircleQuestion className="size-3.5" /> You asked: {a.infoRequest}
+              </p>
+              {a.infoResponse ? (
+                <p className="mt-1.5 text-sm"><b>Response:</b> {a.infoResponse}</p>
+              ) : (
+                <p className="mt-1 text-xs text-muted-foreground">Awaiting volunteer response…</p>
+              )}
+            </div>
+          )}
+
+          <p className="text-center text-xs text-muted-foreground">
+            Applied {timeAgo(a.createdAt)}
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

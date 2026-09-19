@@ -135,7 +135,13 @@ export const listForOpportunity = query({
           )
           .first();
         return vol
-          ? { app, profile: await publicProfileFor(ctx, vol._id), conversationId: conv?._id ?? null }
+          ? {
+              app,
+              profile: await publicProfileFor(ctx, vol._id),
+              // Contact info is only shared with orgs reviewing this application.
+              phone: vol.phone ?? null,
+              conversationId: conv?._id ?? null,
+            }
           : null;
       }),
     );
@@ -180,6 +186,9 @@ export const listForOpportunity = query({
             bio: p.bio,
             age: p.age ?? null,
             education: p.education ?? null,
+            school: p.school ?? null,
+            track: p.track ?? null,
+            phone: row.phone ?? null,
             experience: p.experience ?? null,
             image: p.image,
           },

@@ -48,11 +48,11 @@ export default function AuthCallback() {
     if (!isAuthenticated) return; // still exchanging the code
     if (user === undefined) return; // user row still loading
 
-    const route = (role?: "volunteer" | "organization" | null) => {
+    const route = (role?: "volunteer" | "organization" | null, justSignedUp = false) => {
       routedRef.current = true;
       if (role === "organization") {
         navigate("/org", { replace: true });
-      } else if (role === "volunteer" && !user?.onboardedAt) {
+      } else if (role === "volunteer" && justSignedUp && !user?.onboardedAt) {
         // Brand-new volunteers complete the matching survey once.
         navigate(
           returnTo
@@ -89,7 +89,7 @@ export default function AuthCallback() {
     if (user && !user.accountType && pickedRole && !rolePersistedRef.current) {
       rolePersistedRef.current = true;
       setInitialRole({ accountType: pickedRole })
-        .then(() => route(pickedRole))
+        .then(({ isNew }) => route(pickedRole, isNew))
         .catch(() => {
           // Role conflict or transient error — route by what we know.
           route(user.accountType ?? null);
