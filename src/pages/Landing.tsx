@@ -19,6 +19,7 @@ import { api } from "@/convex/_generated/api";
 import logo from "@/assets/logo.svg";
 import { Button } from "@/components/ui/button";
 import { ClayButton, ClayCard, ClayChip } from "@/components/clay";
+import { ThemeToggle } from "@/components/ThemeProvider";
 import { useAuth } from "@/hooks/use-auth";
 
 const IMG = {
@@ -88,6 +89,7 @@ export default function Landing() {
               </Link>
             </nav>
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               {isAuthenticated ? (
                 <ClayButton asChild size="sm">
                   <Link to="/dashboard">

@@ -1,7 +1,16 @@
 import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes";
 import { THEME_STORAGE_KEY } from "@/lib/constants";
-import { Moon, Sun } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Check, Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
+
+/** Shared click handler that eases the theme switch in with a short transition. */
+function useThemeTransition() {
+  return () => {
+    document.body.classList.add("theme-transitioning");
+    window.setTimeout(() => document.body.classList.remove("theme-transitioning"), 350);
+  };
+}
 
 /**
  * App-wide theme context: "light" | "dark" | "system" (default).
@@ -27,6 +36,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 export function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const runTransition = useThemeTransition();
 
   // Avoid rendering the wrong icon before the theme is known on the client.
   useEffect(() => setMounted(true), []);
@@ -39,10 +49,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       aria-label={mounted ? `Switch to ${isDark ? "light" : "dark"} mode` : "Toggle theme"}
       title={mounted ? `Switch to ${isDark ? "light" : "dark"} mode` : "Toggle theme"}
       onClick={() => {
-        // Briefly enable a smooth color transition so the switch eases in
-        // instead of flashing, then let the platform's own transitions work.
-        document.body.classList.add("theme-transitioning");
-        window.setTimeout(() => document.body.classList.remove("theme-transitioning"), 350);
+        runTransition();
         setTheme(isDark ? "light" : "dark");
       }}
       className={
@@ -52,5 +59,62 @@ export function ThemeToggle({ className }: { className?: string }) {
     >
       {mounted && isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
     </button>
+  );
+}
+
+/** Labeled menu row (Light mode / Dark mode) for dropdowns — shows a check
+ *  mark on the active option and switches with one click. */
+export function ThemeMenuRow() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  const isDark = resolvedTheme === "dark";
+  const runTransition = useThemeTransition();
+
+  return (
+    <div className="flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-semibold">
+      <Sun
+        className={cn(
+          "size-4 shrink-0",
+          mounted && !isDark ? "text-foreground" : "text-muted-foreground/60",
+        )}
+      />
+      <button
+        type="button"
+        onClick={() => {
+          runTransition();
+          setTheme("light");
+        }}
+        className="flex-1 text-left transition-colors hover:text-foreground"
+      >
+        Light mode
+      </button>
+      <Moon
+        className={cn(
+          "ml-2 size-4 shrink-0",
+          mounted && isDark ? "text-foreground" : "text-muted-foreground/60",
+        )}
+      />
+      <button
+        type="button"
+        onClick={() => {
+          runTransition();
+          setTheme("dark");
+        }}
+        className="flex-1 text-left transition-colors hover:text-foreground"
+      >
+        Dark mode
+      </button>
+      {mounted && (
+        <span
+          className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+          title={isDark ? "Dark mode is on" : "Light mode is on"}
+        >
+          <Check className="size-3" />
+        </span>
+      )}
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ThemeProvider";
+import { ThemeMenuRow, ThemeToggle } from "@/components/ThemeProvider";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { api } from "@/convex/_generated/api";
@@ -249,6 +249,9 @@ export function AppShell({
                       </p>
                     )}
                   </div>
+                  <div className="my-1 h-px bg-border" />
+                  {/* Appearance: explicit light / dark switch */}
+                  <ThemeMenuRow />
                   <div className="my-1 h-px bg-border" />
                   {NAV.map((item) => (
                     <ShellNavLink key={item.to} to={item.to} icon={item.icon} label={item.label} stacked />
